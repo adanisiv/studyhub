@@ -1,0 +1,262 @@
+/* ============================================
+   StudyHub — Global Styles
+   CSS3 features used (course requirement):
+   1. @font-face        → in index.html (Rubik font)
+   2. border-radius     → everywhere (.card, .btn, .avatar, etc.)
+   3. text-shadow       → .page-title, .hero-title
+   4. transition        → .btn, .card, .nav-link, .post-card
+   5. multiple-columns  → .columns-layout
+   ============================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Rubik', sans-serif;       /* @font-face */
+  background: #f0f2f5;
+  color: #1a1a2e;
+  line-height: 1.6;
+}
+
+/* --- Layout --- */
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+.main { max-width: 900px; margin: 0 auto; padding: 20px; width: 100%; flex: 1; }
+
+/* --- Navbar --- */
+.navbar {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.navbar-brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e94560;
+  text-decoration: none;
+  text-shadow: 1px 1px 3px rgba(233, 69, 96, 0.4);  /* CSS3: text-shadow */
+}
+.nav-links { display: flex; gap: 16px; align-items: center; }
+.nav-link {
+  color: #ccc;
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;                                 /* CSS3: border-radius */
+  transition: background 0.2s, color 0.2s;            /* CSS3: transition */
+}
+.nav-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.nav-link.active { background: #e94560; color: #fff; }
+
+/* --- Buttons --- */
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;                                 /* CSS3: border-radius */
+  font-size: 14px;
+  font-family: 'Rubik', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;        /* CSS3: transition */
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: #e94560; color: #fff; }
+.btn-primary:hover { background: #d63851; }
+.btn-secondary { background: #16213e; color: #fff; }
+.btn-secondary:hover { background: #0f3460; }
+.btn-danger { background: #c0392b; color: #fff; }
+.btn-danger:hover { background: #a93226; }
+.btn-small { padding: 4px 12px; font-size: 12px; }
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid #e94560;
+  color: #e94560;
+}
+.btn-outline:hover { background: #e94560; color: #fff; }
+
+/* --- Cards --- */
+.card {
+  background: #fff;
+  border-radius: 12px;                                /* CSS3: border-radius */
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s;                        /* CSS3: transition */
+}
+.card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+/* --- Page titles --- */
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);          /* CSS3: text-shadow */
+}
+
+/* --- Forms --- */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; color: #555; }
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;                                 /* CSS3: border-radius */
+  font-size: 14px;
+  font-family: 'Rubik', sans-serif;
+  transition: border-color 0.2s;                      /* CSS3: transition */
+}
+.form-input:focus { outline: none; border-color: #e94560; }
+select.form-input { cursor: pointer; }
+textarea.form-input { resize: vertical; min-height: 80px; }
+
+/* --- Post card --- */
+.post-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: transform 0.15s, box-shadow 0.15s;      /* CSS3: transition */
+}
+.post-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.post-meta { font-size: 12px; color: #888; }
+.post-content { font-size: 15px; margin-bottom: 10px; }
+.post-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.tag {
+  background: #eef;
+  color: #336;
+  padding: 2px 10px;
+  border-radius: 20px;                                /* CSS3: border-radius */
+  font-size: 11px;
+  transition: background 0.2s;
+}
+.tag:hover { background: #ddf; }
+.post-actions { display: flex; gap: 12px; align-items: center; }
+.post-actions button {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; color: #666;
+  transition: color 0.2s;
+}
+.post-actions button:hover { color: #e94560; }
+
+/* --- Avatar --- */
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;                                  /* CSS3: border-radius */
+  background: #e94560;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+  flex-shrink: 0;
+}
+.avatar-large { width: 64px; height: 64px; font-size: 24px; }
+
+/* --- Multiple columns layout (CSS3) --- */
+.columns-layout {
+  column-count: 2;                                     /* CSS3: multiple-columns */
+  column-gap: 20px;
+  column-rule: 1px solid #eee;
+}
+@media (max-width: 600px) { .columns-layout { column-count: 1; } }
+
+/* --- Chat --- */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.chat-bubble.mine {
+  align-self: flex-end;
+  background: #e94560;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-bubble.theirs {
+  align-self: flex-start;
+  background: #f0f0f0;
+  color: #333;
+  border-bottom-left-radius: 4px;
+}
+.chat-bubble .sender { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+.chat-input-area {
+  display: flex; gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+}
+.chat-input-area input { flex: 1; }
+.typing-indicator { font-size: 12px; color: #999; padding: 4px 16px; height: 24px; }
+
+/* --- Stats / Charts --- */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+
+/* --- Search bar (jQuery live search) --- */
+.search-bar-container { position: relative; margin-bottom: 20px; }
+.search-bar-container .search-results-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0 0 8px 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+.search-bar-container .search-result-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.search-bar-container .search-result-item:hover { background: #fafafa; }
+
+/* --- Video --- */
+.post-video {
+  width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+/* --- Canvas --- */
+.profile-canvas {
+  border-radius: 8px;
+  display: block;
+  margin: 10px 0;
+}
+
+/* --- Utilities --- */
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-10 { margin-top: 10px; }
+.mt-20 { margin-top: 20px; }
+.mb-10 { margin-bottom: 10px; }
+.text-center { text-align: center; }
+.text-muted { color: #888; font-size: 13px; }
+.error-text { color: #c0392b; font-size: 13px; margin-top: 6px; }
+.success-text { color: #27ae60; font-size: 13px; margin-top: 6px; }
