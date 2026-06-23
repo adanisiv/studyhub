@@ -1,6 +1,14 @@
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
-// GET /api/users — list all users (public info only)
+const notify = async (req, recipientId, data) => {
+  const notif = await Notification.create(data);
+  const populated = await notif.populate('sender', 'name avatar');
+  const io = req.app.get('io');
+  if (io) io.to(`user_${recipientId}`).emit('new_notification', populated);
+};
+
+// GET /api/users
 exports.list = async (req, res) => {
   try {
     const users = await User.find().select('name email department year avatar');
@@ -10,7 +18,7 @@ exports.list = async (req, res) => {
   }
 };
 
-// GET /api/users/search?name=...&department=...&year=...
+// GET /api/users/search
 exports.search = async (req, res) => {
   try {
     const filter = {};
@@ -43,7 +51,7 @@ exports.getById = async (req, res) => {
   }
 };
 
-// PUT /api/users/:id — update own profile
+// PUT /api/users/:id
 exports.update = async (req, res) => {
   try {
     if (req.params.id !== req.userId) {
@@ -62,7 +70,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// DELETE /api/users/:id — delete own account
+// DELETE /api/users/:id
 exports.remove = async (req, res) => {
   try {
     if (req.params.id !== req.userId) {
@@ -75,7 +83,7 @@ exports.remove = async (req, res) => {
   }
 };
 
-// POST /api/users/:id/friend — add friend
+// POST /api/users/:id/friend
 exports.addFriend = async (req, res) => {
   try {
     const { friendId } = req.body;
@@ -90,8 +98,15 @@ exports.addFriend = async (req, res) => {
     user.friends.push(friendId);
     await user.save();
 
-    // add back (mutual friendship)
     await User.findByIdAndUpdate(friendId, { $addToSet: { friends: req.userId } });
+
+    // notify the other user
+    await notify(req, friendId, {
+      recipient: friendId,
+      sender: req.userId,
+      type: 'friend_request',
+      message: `${user.name} added you as a friend`
+    });
 
     res.json({ message: 'Friend added' });
   } catch (err) {
@@ -99,7 +114,7 @@ exports.addFriend = async (req, res) => {
   }
 };
 
-// DELETE /api/users/:id/friend — remove friend
+// DELETE /api/users/:id/friend
 exports.removeFriend = async (req, res) => {
   try {
     const { friendId } = req.body;

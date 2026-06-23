@@ -1,5 +1,14 @@
 const Post = require('../models/Post');
 const Group = require('../models/Group');
+const Notification = require('../models/Notification');
+
+// helper: send real-time notification
+const notify = async (req, recipientId, data) => {
+  const notif = await Notification.create(data);
+  const populated = await notif.populate('sender', 'name avatar');
+  const io = req.app.get('io');
+  if (io) io.to(`user_${recipientId}`).emit('new_notification', populated);
+};
 
 // POST /api/posts — create a post
 exports.create = async (req, res) => {
@@ -7,7 +16,6 @@ exports.create = async (req, res) => {
     const { content, type, tags, mediaUrl, mediaType, group } = req.body;
     if (!content) return res.status(400).json({ error: 'Content is required' });
 
-    // if posting to a group, verify membership
     if (group) {
       const g = await Group.findById(group);
       if (!g) return res.status(404).json({ error: 'Group not found' });
@@ -29,21 +37,20 @@ exports.create = async (req, res) => {
   }
 };
 
-// GET /api/posts/feed — posts from user's groups + friends
+// GET /api/posts/feed
 exports.feed = async (req, res) => {
   try {
     const User = require('../models/User');
     const user = await User.findById(req.userId);
 
-    // groups the user belongs to
     const groups = await Group.find({ members: req.userId }).select('_id');
     const groupIds = groups.map(g => g._id);
 
     const posts = await Post.find({
       $or: [
-        { group: { $in: groupIds } },                 // posts in my groups
-        { author: { $in: user.friends }, group: null }, // friends' personal posts
-        { author: req.userId }                          // my own posts
+        { group: { $in: groupIds } },
+        { author: { $in: user.friends }, group: null },
+        { author: req.userId }
       ]
     })
       .sort({ createdAt: -1 })
@@ -58,7 +65,7 @@ exports.feed = async (req, res) => {
   }
 };
 
-// GET /api/posts/my — all posts by current user
+// GET /api/posts/my
 exports.myPosts = async (req, res) => {
   try {
     const posts = await Post.find({ author: req.userId })
@@ -70,13 +77,12 @@ exports.myPosts = async (req, res) => {
   }
 };
 
-// GET /api/posts/group/:groupId — posts in a specific group
+// GET /api/posts/group/:groupId
 exports.byGroup = async (req, res) => {
   try {
     const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    // private group check
     if (group.isPrivate && !group.members.includes(req.userId)) {
       return res.status(403).json({ error: 'You are not a member of this private group' });
     }
@@ -91,8 +97,7 @@ exports.byGroup = async (req, res) => {
   }
 };
 
-// GET /api/posts/search?keyword=...&type=...&dateFrom=...&dateTo=...&tag=...
-// ADVANCED SEARCH #2 — 4 parameters
+// GET /api/posts/search — ADVANCED SEARCH #2
 exports.search = async (req, res) => {
   try {
     const filter = {};
@@ -137,21 +142,17 @@ exports.getById = async (req, res) => {
   }
 };
 
-// PUT /api/posts/:id — only author can edit (or group admin)
+// PUT /api/posts/:id
 exports.update = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    // check: is user the author?
     let canEdit = post.author.toString() === req.userId;
-
-    // check: is user the group admin?
     if (!canEdit && post.group) {
       const group = await Group.findById(post.group);
       if (group && group.admin.toString() === req.userId) canEdit = true;
     }
-
     if (!canEdit) return res.status(403).json({ error: 'Not allowed to edit this post' });
 
     const allowed = ['content', 'type', 'tags', 'mediaUrl', 'mediaType'];
@@ -166,7 +167,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// DELETE /api/posts/:id — author or group admin
+// DELETE /api/posts/:id
 exports.remove = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -198,7 +199,50 @@ exports.addComment = async (req, res) => {
     post.comments.push({ author: req.userId, text });
     await post.save();
     const populated = await post.populate('comments.author', 'name avatar');
+
+    // notify post author about the comment
+    if (post.author.toString() !== req.userId) {
+      const User = require('../models/User');
+      const sender = await User.findById(req.userId);
+      await notify(req, post.author.toString(), {
+        recipient: post.author,
+        sender: req.userId,
+        type: 'comment',
+        message: `${sender.name} commented on your post`,
+        post: post._id
+      });
+    }
+
     res.json(populated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// DELETE /api/posts/:postId/comment/:commentId
+exports.deleteComment = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+
+    const isCommentAuthor = comment.author.toString() === req.userId;
+    const isPostAuthor = post.author.toString() === req.userId;
+    let isGroupAdmin = false;
+    if (post.group) {
+      const group = await Group.findById(post.group);
+      if (group && group.admin.toString() === req.userId) isGroupAdmin = true;
+    }
+
+    if (!isCommentAuthor && !isPostAuthor && !isGroupAdmin) {
+      return res.status(403).json({ error: 'Not allowed to delete this comment' });
+    }
+
+    post.comments.pull({ _id: req.params.commentId });
+    await post.save();
+    res.json({ message: 'Comment deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -213,6 +257,19 @@ exports.toggleLike = async (req, res) => {
     const idx = post.likes.indexOf(req.userId);
     if (idx === -1) {
       post.likes.push(req.userId);
+
+      // notify post author about the like
+      if (post.author.toString() !== req.userId) {
+        const User = require('../models/User');
+        const sender = await User.findById(req.userId);
+        await notify(req, post.author.toString(), {
+          recipient: post.author,
+          sender: req.userId,
+          type: 'like',
+          message: `${sender.name} liked your post`,
+          post: post._id
+        });
+      }
     } else {
       post.likes.splice(idx, 1);
     }

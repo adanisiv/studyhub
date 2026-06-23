@@ -5,6 +5,7 @@ import API from '../api/axios';
 function StatsPage() {
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
+  const [loading, setLoading] = useState(true);
   const barRef = useRef(null);
   const pieRef = useRef(null);
 
@@ -17,6 +18,7 @@ function StatsPage() {
   }, [selectedGroup]);
 
   const loadCharts = async () => {
+    setLoading(true);
     const params = selectedGroup ? { groupId: selectedGroup } : {};
     try {
       const [monthRes, typeRes] = await Promise.all([
@@ -28,18 +30,36 @@ function StatsPage() {
     } catch (err) {
       console.error(err);
     }
+    setLoading(false);
+  };
+
+  const getChartColors = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      text: isDark ? '#a0a8c0' : '#475569',
+      gridLine: isDark ? '#252540' : '#e2e8f0',
+      accent: '#f93a5b',
+      bg: isDark ? '#16162a' : '#ffffff'
+    };
   };
 
   // --- D3 Bar Chart: posts per month ---
   const drawBarChart = (data) => {
     const container = barRef.current;
     d3.select(container).selectAll('*').remove();
+    const colors = getChartColors();
+
     if (data.length === 0) {
-      d3.select(container).append('p').text('No data').style('color', '#999').style('text-align', 'center');
+      d3.select(container).append('div')
+        .style('text-align', 'center')
+        .style('padding', '40px')
+        .style('color', colors.text)
+        .style('font-size', '13px')
+        .text('No data available');
       return;
     }
 
-    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+    const margin = { top: 20, right: 16, bottom: 40, left: 40 };
     const width = 400 - margin.left - margin.right;
     const height = 250 - margin.top - margin.bottom;
 
@@ -49,10 +69,15 @@ function StatsPage() {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const x = d3.scaleBand().domain(data.map(d => d.month)).range([0, width]).padding(0.3);
+    const x = d3.scaleBand().domain(data.map(d => d.month)).range([0, width]).padding(0.35);
     const y = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).nice().range([height, 0]);
 
-    // bars
+    // bars with gradient
+    const defs = svg.append('defs');
+    const gradient = defs.append('linearGradient').attr('id', 'barGrad').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
+    gradient.append('stop').attr('offset', '0%').attr('stop-color', '#f93a5b');
+    gradient.append('stop').attr('offset', '100%').attr('stop-color', '#e71d47');
+
     svg.selectAll('rect')
       .data(data)
       .enter()
@@ -61,31 +86,39 @@ function StatsPage() {
       .attr('y', d => y(d.count))
       .attr('width', x.bandwidth())
       .attr('height', d => height - y(d.count))
-      .attr('fill', '#e94560')
-      .attr('rx', 4);
+      .attr('fill', 'url(#barGrad)')
+      .attr('rx', 6)
+      .attr('ry', 6);
 
-    // x axis
     svg.append('g')
       .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x))
+      .call(d3.axisBottom(x).tickSize(0))
       .selectAll('text')
       .style('font-size', '10px')
+      .style('fill', colors.text)
       .attr('transform', 'rotate(-30)')
       .style('text-anchor', 'end');
 
-    // y axis
-    svg.append('g').call(d3.axisLeft(y).ticks(5));
+    svg.append('g')
+      .call(d3.axisLeft(y).ticks(5).tickSize(-width))
+      .selectAll('text')
+      .style('fill', colors.text)
+      .style('font-size', '10px');
 
-    // labels on bars
+    svg.selectAll('.tick line').style('stroke', colors.gridLine).style('opacity', 0.5);
+    svg.selectAll('.domain').style('stroke', colors.gridLine);
+
+    // labels
     svg.selectAll('.label')
       .data(data)
       .enter()
       .append('text')
       .attr('x', d => x(d.month) + x.bandwidth() / 2)
-      .attr('y', d => y(d.count) - 5)
+      .attr('y', d => y(d.count) - 6)
       .attr('text-anchor', 'middle')
       .style('font-size', '11px')
-      .style('fill', '#333')
+      .style('font-weight', '600')
+      .style('fill', colors.text)
       .text(d => d.count);
   };
 
@@ -93,14 +126,25 @@ function StatsPage() {
   const drawPieChart = (data) => {
     const container = pieRef.current;
     d3.select(container).selectAll('*').remove();
+    const colors = getChartColors();
+
     if (data.length === 0) {
-      d3.select(container).append('p').text('No data').style('color', '#999').style('text-align', 'center');
+      d3.select(container).append('div')
+        .style('text-align', 'center')
+        .style('padding', '40px')
+        .style('color', colors.text)
+        .style('font-size', '13px')
+        .text('No data available');
       return;
     }
 
     const size = 250;
     const radius = size / 2 - 20;
-    const colors = { question: '#e94560', material: '#16213e', announcement: '#0f3460' };
+    const typeColors = {
+      question: '#f59e0b',
+      material: '#6366f1',
+      announcement: '#f93a5b'
+    };
 
     const svg = d3.select(container)
       .append('svg')
@@ -108,27 +152,27 @@ function StatsPage() {
       .append('g')
       .attr('transform', `translate(${size / 2},${size / 2})`);
 
-    const pie = d3.pie().value(d => d.count);
-    const arc = d3.arc().innerRadius(40).outerRadius(radius);
+    const pie = d3.pie().value(d => d.count).padAngle(0.03);
+    const arc = d3.arc().innerRadius(radius * 0.55).outerRadius(radius).cornerRadius(4);
 
     svg.selectAll('path')
       .data(pie(data))
       .enter()
       .append('path')
       .attr('d', arc)
-      .attr('fill', d => colors[d.data.type] || '#999')
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 2);
+      .attr('fill', d => typeColors[d.data.type] || '#94a3b8')
+      .style('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))');
 
     // labels
-    const labelArc = d3.arc().innerRadius(radius * 0.7).outerRadius(radius * 0.7);
+    const labelArc = d3.arc().innerRadius(radius * 0.78).outerRadius(radius * 0.78);
     svg.selectAll('text')
       .data(pie(data))
       .enter()
       .append('text')
       .attr('transform', d => `translate(${labelArc.centroid(d)})`)
       .attr('text-anchor', 'middle')
-      .style('font-size', '11px')
+      .style('font-size', '10px')
+      .style('font-weight', '600')
       .style('fill', '#fff')
       .text(d => `${d.data.type} (${d.data.count})`);
   };
@@ -137,23 +181,36 @@ function StatsPage() {
     <div>
       <h1 className="page-title">Statistics</h1>
 
-      <div className="card mb-10">
-        <label style={{ fontSize: 13, fontWeight: 700, marginRight: 8 }}>Filter by group:</label>
-        <select className="form-input" style={{ width: 'auto', display: 'inline-block' }}
-          value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)}>
-          <option value="">All groups</option>
-          {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
-        </select>
+      <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+        <div className="flex items-center gap-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)' }}>Filter by group</label>
+          <select className="form-input" style={{ width: 'auto', flex: 1, maxWidth: 300 }}
+            value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)}>
+            <option value="">All groups</option>
+            {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className="charts-grid">
         <div className="card">
-          <h3 style={{ marginBottom: 10 }}>Posts per Month</h3>
-          <div ref={barRef}></div>
+          <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Posts per Month</div>
+          {loading ? (
+            <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
+          ) : (
+            <div ref={barRef}></div>
+          )}
         </div>
         <div className="card">
-          <h3 style={{ marginBottom: 10 }}>Post Types</h3>
-          <div ref={pieRef}></div>
+          <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Post Types</div>
+          {loading ? (
+            <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
+          ) : (
+            <div ref={pieRef}></div>
+          )}
         </div>
       </div>
     </div>

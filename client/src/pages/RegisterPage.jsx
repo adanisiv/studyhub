@@ -5,6 +5,7 @@ import API from '../api/axios';
 function RegisterPage({ onLogin }) {
   const [form, setForm] = useState({ name: '', email: '', password: '', department: '', year: 1 });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -13,53 +14,68 @@ function RegisterPage({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       const res = await API.post('/auth/register', form);
       onLogin(res.data.user, res.data.token);
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
     }
+    setLoading(false);
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '60px auto' }}>
-      <h1 className="page-title text-center">Create Account</h1>
-      <div className="card">
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input className="form-input" name="name" value={form.name}
-              onChange={handleChange} required />
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <span className="brand-icon">S</span>
+            StudyHub
           </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input className="form-input" name="email" type="email" value={form.email}
-              onChange={handleChange} required />
-          </div>
-          <div className="form-group">
-            <label>Password (min 6 chars)</label>
-            <input className="form-input" name="password" type="password" value={form.password}
-              onChange={handleChange} required minLength={6} />
-          </div>
-          <div className="form-group">
-            <label>Department</label>
-            <input className="form-input" name="department" value={form.department}
-              onChange={handleChange} placeholder="e.g. Computer Science" />
-          </div>
-          <div className="form-group">
-            <label>Year</label>
-            <select className="form-input" name="year" value={form.year} onChange={handleChange}>
-              {[1,2,3,4,5,6].map(y => <option key={y} value={y}>Year {y}</option>)}
-            </select>
-          </div>
-          {error && <p className="error-text">{error}</p>}
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 10 }}>
-            Register
-          </button>
-        </form>
-        <p className="text-center mt-10 text-muted">
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
+          <h1 className="auth-title">Create your account</h1>
+          <p className="auth-subtitle">Join the student network and start collaborating</p>
+        </div>
+
+        <div className="auth-card">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Full name</label>
+              <input className="form-input" name="name" value={form.name}
+                onChange={handleChange} placeholder="Your full name" required />
+            </div>
+            <div className="form-group">
+              <label>Email address</label>
+              <input className="form-input" name="email" type="email" value={form.email}
+                onChange={handleChange} placeholder="you@university.edu" required />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input className="form-input" name="password" type="password" value={form.password}
+                onChange={handleChange} placeholder="Min 6 characters" required minLength={6} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
+              <div className="form-group">
+                <label>Department</label>
+                <input className="form-input" name="department" value={form.department}
+                  onChange={handleChange} placeholder="e.g. Computer Science" />
+              </div>
+              <div className="form-group">
+                <label>Year</label>
+                <select className="form-input" name="year" value={form.year} onChange={handleChange}>
+                  {[1,2,3,4,5,6].map(y => <option key={y} value={y}>Year {y}</option>)}
+                </select>
+              </div>
+            </div>
+            {error && <p className="error-text">{error}</p>}
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }} disabled={loading}>
+              {loading ? 'Creating account...' : 'Create account'}
+            </button>
+          </form>
+        </div>
+
+        <div className="auth-footer">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </div>
       </div>
     </div>
   );

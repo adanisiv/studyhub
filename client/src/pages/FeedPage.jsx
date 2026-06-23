@@ -3,6 +3,23 @@ import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
 
+function SkeletonPost() {
+  return (
+    <div className="skeleton-card">
+      <div className="flex gap-3 items-center" style={{ marginBottom: 16 }}>
+        <div className="skeleton skeleton-avatar" />
+        <div style={{ flex: 1 }}>
+          <div className="skeleton skeleton-text" style={{ width: '40%' }} />
+          <div className="skeleton skeleton-text" style={{ width: '25%', height: 10 }} />
+        </div>
+      </div>
+      <div className="skeleton skeleton-text" />
+      <div className="skeleton skeleton-text" />
+      <div className="skeleton skeleton-text" style={{ width: '70%' }} />
+    </div>
+  );
+}
+
 function FeedPage({ user }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,12 +39,25 @@ function FeedPage({ user }) {
 
   return (
     <div>
-      <h1 className="page-title">My Feed</h1>
+      <h1 className="page-title">Feed</h1>
       <PostForm onCreated={loadFeed} />
+
       {loading ? (
-        <p className="text-muted text-center mt-20">Loading...</p>
+        <>
+          <SkeletonPost />
+          <SkeletonPost />
+          <SkeletonPost />
+        </>
       ) : posts.length === 0 ? (
-        <p className="text-muted text-center mt-20">No posts yet. Join some groups!</p>
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </div>
+          <div className="empty-state-title">No posts yet</div>
+          <div className="empty-state-text">Join some groups to see posts in your feed, or create the first post!</div>
+        </div>
       ) : (
         posts.map(post => (
           <PostCard key={post._id} post={post} currentUserId={user._id}

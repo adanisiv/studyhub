@@ -1,6 +1,14 @@
 const Group = require('../models/Group');
+const Notification = require('../models/Notification');
 
-// POST /api/groups — create group (creator becomes admin)
+const notify = async (req, recipientId, data) => {
+  const notif = await Notification.create(data);
+  const populated = await notif.populate('sender', 'name avatar');
+  const io = req.app.get('io');
+  if (io) io.to(`user_${recipientId}`).emit('new_notification', populated);
+};
+
+// POST /api/groups
 exports.create = async (req, res) => {
   try {
     const { name, description, subject, year, semester, department, isPrivate } = req.body;
@@ -17,7 +25,7 @@ exports.create = async (req, res) => {
   }
 };
 
-// GET /api/groups — list all public groups (+ private groups user is member of)
+// GET /api/groups
 exports.list = async (req, res) => {
   try {
     const groups = await Group.find({
@@ -32,8 +40,7 @@ exports.list = async (req, res) => {
   }
 };
 
-// GET /api/groups/search?name=...&year=...&semester=...&department=...
-// ADVANCED SEARCH #1 — 4 parameters
+// GET /api/groups/search — ADVANCED SEARCH #1
 exports.search = async (req, res) => {
   try {
     const filter = {};
@@ -50,7 +57,6 @@ exports.search = async (req, res) => {
       filter.department = { $regex: req.query.department, $options: 'i' };
     }
 
-    // only show public groups + groups user is member of
     filter.$or = [{ isPrivate: false }, { members: req.userId }];
 
     const groups = await Group.find(filter).populate('admin', 'name');
@@ -70,7 +76,6 @@ exports.getById = async (req, res) => {
 
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    // private group — only members can view
     if (group.isPrivate && !group.members.some(m => m._id.toString() === req.userId)) {
       return res.status(403).json({ error: 'This group is private' });
     }
@@ -81,7 +86,7 @@ exports.getById = async (req, res) => {
   }
 };
 
-// PUT /api/groups/:id — only admin can edit
+// PUT /api/groups/:id
 exports.update = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
@@ -101,7 +106,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// DELETE /api/groups/:id — only admin can delete
+// DELETE /api/groups/:id
 exports.remove = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
@@ -116,7 +121,7 @@ exports.remove = async (req, res) => {
   }
 };
 
-// POST /api/groups/:id/join — request to join (or join directly if public)
+// POST /api/groups/:id/join
 exports.join = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
@@ -127,16 +132,26 @@ exports.join = async (req, res) => {
     }
 
     if (group.isPrivate) {
-      // add to pending
       if (group.pendingRequests.includes(req.userId)) {
         return res.status(400).json({ error: 'Request already pending' });
       }
       group.pendingRequests.push(req.userId);
       await group.save();
+
+      // notify admin about join request
+      const User = require('../models/User');
+      const sender = await User.findById(req.userId);
+      await notify(req, group.admin.toString(), {
+        recipient: group.admin,
+        sender: req.userId,
+        type: 'group_join',
+        message: `${sender.name} wants to join ${group.name}`,
+        group: group._id
+      });
+
       return res.json({ message: 'Join request sent' });
     }
 
-    // public group — join directly
     group.members.push(req.userId);
     await group.save();
     res.json({ message: 'Joined group' });
@@ -145,7 +160,7 @@ exports.join = async (req, res) => {
   }
 };
 
-// POST /api/groups/:id/approve — admin approves pending request
+// POST /api/groups/:id/approve
 exports.approve = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -158,6 +173,18 @@ exports.approve = async (req, res) => {
     group.pendingRequests = group.pendingRequests.filter(id => id.toString() !== userId);
     group.members.push(userId);
     await group.save();
+
+    // notify user that they were approved
+    const User = require('../models/User');
+    const admin = await User.findById(req.userId);
+    await notify(req, userId, {
+      recipient: userId,
+      sender: req.userId,
+      type: 'group_approved',
+      message: `${admin.name} approved you to join ${group.name}`,
+      group: group._id
+    });
+
     res.json({ message: 'User approved' });
   } catch (err) {
     res.status(500).json({ error: err.message });

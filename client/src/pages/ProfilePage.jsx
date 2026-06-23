@@ -25,7 +25,7 @@ function ProfilePage({ currentUser }) {
   };
 
   const loadPosts = async () => {
-    if (!isOwnProfile) return; // only show own posts on own profile
+    if (!isOwnProfile) return;
     try {
       const res = await API.get('/posts/my');
       setPosts(res.data);
@@ -36,7 +36,7 @@ function ProfilePage({ currentUser }) {
 
   useEffect(() => { loadProfile(); loadPosts(); }, [id]);
 
-  // --- Canvas: draw a simple profile banner (React Canvas requirement) ---
+  // --- Canvas: profile banner (React Canvas requirement) ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !profile) return;
@@ -46,36 +46,47 @@ function ProfilePage({ currentUser }) {
 
     // gradient background
     const grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#1a1a2e');
-    grad.addColorStop(0.5, '#16213e');
+    grad.addColorStop(0, '#0f0f1a');
+    grad.addColorStop(0.4, '#1a1a3e');
     grad.addColorStop(1, '#e94560');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
     // decorative circles
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       ctx.beginPath();
-      ctx.arc(80 + i * 120, 50 + Math.sin(i) * 20, 30 + i * 5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${0.04 + i * 0.01})`;
+      ctx.arc(60 + i * 100, 55 + Math.sin(i * 0.8) * 25, 20 + i * 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${0.02 + i * 0.008})`;
       ctx.fill();
     }
 
     // user initial (big letter)
     const initial = profile.name?.charAt(0)?.toUpperCase() || '?';
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 48px Rubik, sans-serif';
+    ctx.font = 'bold 44px Rubik, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(initial, 80, 80);
+    ctx.fillText(initial, 70, 78);
 
     // user name
-    ctx.font = '24px Rubik, sans-serif';
+    ctx.font = 'bold 22px Rubik, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(profile.name, 140, 60);
+    ctx.fillText(profile.name, 130, 58);
 
     // department + year
-    ctx.font = '14px Rubik, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText(`${profile.department || 'No department'} · Year ${profile.year}`, 140, 85);
+    ctx.font = '13px Rubik, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText(`${profile.department || 'No department'} · Year ${profile.year}`, 130, 82);
+
+    // text-shadow effect (CSS3 text-shadow equivalent in canvas)
+    ctx.shadowColor = 'rgba(233, 69, 96, 0.3)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 44px Rubik, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(initial, 70, 78);
+    ctx.shadowBlur = 0;
   }, [profile]);
 
   const handleUpdate = async (e) => {
@@ -120,77 +131,125 @@ function ProfilePage({ currentUser }) {
     }
   };
 
-  if (!profile) return <p className="text-muted">Loading...</p>;
+  if (!profile) return (
+    <div>
+      <div className="skeleton" style={{ height: 110, borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-4)' }} />
+      <div className="skeleton-card" style={{ height: 140 }}>
+        <div className="skeleton skeleton-text" style={{ width: '40%', height: 20 }} />
+        <div className="skeleton skeleton-text" style={{ width: '60%', marginTop: 12 }} />
+        <div className="skeleton skeleton-text" style={{ width: '30%' }} />
+      </div>
+    </div>
+  );
 
   return (
     <div>
       {/* Canvas banner — React Canvas requirement */}
-      <canvas ref={canvasRef} width={700} height={110} className="profile-canvas" />
+      <canvas ref={canvasRef} width={860} height={110} className="profile-canvas" />
 
-      <div className="card">
-        {editing ? (
-          <form onSubmit={handleUpdate}>
-            <div className="form-group">
-              <label>Name</label>
-              <input className="form-input" value={editForm.name}
-                onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Department</label>
-              <input className="form-input" value={editForm.department}
-                onChange={e => setEditForm({ ...editForm, department: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Year</label>
-              <select className="form-input" value={editForm.year}
-                onChange={e => setEditForm({ ...editForm, year: Number(e.target.value) })}>
-                {[1,2,3,4,5,6].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-            <div className="flex gap-8">
-              <button className="btn btn-primary btn-small" type="submit">Save</button>
-              <button className="btn btn-small" type="button" onClick={() => setEditing(false)}>Cancel</button>
-            </div>
-          </form>
-        ) : (
-          <>
-            <h2>{profile.name}</h2>
-            <p className="text-muted">{profile.email}</p>
-            <p style={{ fontSize: 14 }}>{profile.department || 'No department'} · Year {profile.year}</p>
-            <div className="flex gap-8 mt-10">
-              {isOwnProfile && <button className="btn btn-secondary btn-small" onClick={() => setEditing(true)}>Edit Profile</button>}
-              {isOwnProfile && <button className="btn btn-danger btn-small" onClick={handleDeleteAccount}>Delete Account</button>}
-              {!isOwnProfile && !isFriend && <button className="btn btn-primary btn-small" onClick={handleAddFriend}>Add Friend</button>}
-              {!isOwnProfile && isFriend && <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>Remove Friend</button>}
-              {!isOwnProfile && <Link to={`/chat/${id}`} className="btn btn-secondary btn-small">Chat</Link>}
-            </div>
-          </>
-        )}
+      <div className="profile-card">
+        <div className="profile-info">
+          {editing ? (
+            <form onSubmit={handleUpdate}>
+              <div className="form-group">
+                <label>Name</label>
+                <input className="form-input" value={editForm.name}
+                  onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
+                <div className="form-group">
+                  <label>Department</label>
+                  <input className="form-input" value={editForm.department}
+                    onChange={e => setEditForm({ ...editForm, department: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Year</label>
+                  <select className="form-input" value={editForm.year}
+                    onChange={e => setEditForm({ ...editForm, year: Number(e.target.value) })}>
+                    {[1,2,3,4,5,6].map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button className="btn btn-primary btn-small" type="submit">Save Changes</button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => setEditing(false)}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div className="flex-between">
+                <div>
+                  <h2 className="profile-name">{profile.name}</h2>
+                  <p className="profile-detail">
+                    {profile.email} · {profile.department || 'No department'} · Year {profile.year}
+                  </p>
+                </div>
+              </div>
+              <div className="profile-actions">
+                {isOwnProfile && (
+                  <button className="btn btn-secondary btn-small" onClick={() => setEditing(true)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit Profile
+                  </button>
+                )}
+                {isOwnProfile && (
+                  <button className="btn btn-danger btn-small" onClick={handleDeleteAccount}>Delete Account</button>
+                )}
+                {!isOwnProfile && !isFriend && (
+                  <button className="btn btn-primary btn-small" onClick={handleAddFriend}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+                    Add Friend
+                  </button>
+                )}
+                {!isOwnProfile && isFriend && (
+                  <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>Remove Friend</button>
+                )}
+                {!isOwnProfile && (
+                  <Link to={`/chat/${id}`} className="btn btn-secondary btn-small">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    Message
+                  </Link>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Friends list */}
       <div className="card">
-        <h3>Friends ({profile.friends?.length || 0})</h3>
-        <div className="flex gap-8 mt-10" style={{ flexWrap: 'wrap' }}>
+        <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
+          Friends <span className="section-count">{profile.friends?.length || 0}</span>
+        </div>
+        <div className="flex gap-2 flex-wrap">
           {profile.friends?.map(f => (
-            <Link key={f._id} to={`/profile/${f._id}`}
-              style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#f5f5f5', borderRadius: 20, fontSize: 13 }}>
-              <div className="avatar" style={{ width: 24, height: 24, fontSize: 11 }}>{f.name?.charAt(0)}</div>
+            <Link key={f._id} to={`/profile/${f._id}`} className="member-chip">
+              <div className="avatar avatar-sm" style={{ width: 22, height: 22, fontSize: 10 }}>{f.name?.charAt(0)}</div>
               {f.name}
             </Link>
           ))}
-          {(!profile.friends || profile.friends.length === 0) && <p className="text-muted">No friends yet</p>}
+          {(!profile.friends || profile.friends.length === 0) && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>No friends yet</p>
+          )}
         </div>
       </div>
 
       {/* Own posts */}
       {isOwnProfile && (
         <>
-          <h2 className="mt-20" style={{ marginBottom: 12 }}>My Posts ({posts.length})</h2>
-          {posts.map(post => (
-            <PostCard key={post._id} post={post} currentUserId={currentUser._id}
-              onUpdate={loadPosts} onDelete={loadPosts} />
-          ))}
+          <div className="section-header mt-20">
+            <div className="section-title">My Posts <span className="section-count">{posts.length}</span></div>
+          </div>
+          {posts.length === 0 ? (
+            <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
+              <div className="empty-state-text">You haven't posted anything yet</div>
+            </div>
+          ) : (
+            posts.map(post => (
+              <PostCard key={post._id} post={post} currentUserId={currentUser._id}
+                onUpdate={loadPosts} onDelete={loadPosts} />
+            ))
+          )}
         </>
       )}
     </div>

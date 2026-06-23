@@ -2,13 +2,11 @@ const Message = require('../models/Message');
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+    console.log('User connected:', socket.userId || socket.id);
 
-    // join a chat room (roomId = sorted pair of user ids)
     socket.on('join_room', async (roomId) => {
       socket.join(roomId);
 
-      // send chat history
       const history = await Message.find({ roomId })
         .sort({ createdAt: 1 })
         .limit(100)
@@ -16,7 +14,6 @@ module.exports = (io) => {
       socket.emit('chat_history', history);
     });
 
-    // send message
     socket.on('send_message', async ({ roomId, senderId, text }) => {
       try {
         const message = await Message.create({ roomId, sender: senderId, text });
@@ -27,7 +24,6 @@ module.exports = (io) => {
       }
     });
 
-    // typing indicator
     socket.on('typing', ({ roomId, userName }) => {
       socket.to(roomId).emit('user_typing', { userName });
     });
@@ -37,7 +33,7 @@ module.exports = (io) => {
     });
 
     socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
+      console.log('User disconnected:', socket.userId || socket.id);
     });
   });
 };

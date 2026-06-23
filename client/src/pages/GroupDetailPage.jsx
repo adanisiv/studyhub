@@ -77,8 +77,24 @@ function GroupDetailPage({ user }) {
     }
   };
 
-  if (error) return <p className="error-text">{error}</p>;
-  if (!group) return <p className="text-muted">Loading...</p>;
+  if (error) return (
+    <div className="empty-state">
+      <div className="empty-state-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+      </div>
+      <div className="empty-state-title" style={{ color: 'var(--error)' }}>{error}</div>
+    </div>
+  );
+
+  if (!group) return (
+    <div>
+      <div className="skeleton-card" style={{ height: 120 }}>
+        <div className="skeleton skeleton-text" style={{ width: '40%', height: 24 }} />
+        <div className="skeleton skeleton-text" style={{ marginTop: 16 }} />
+        <div className="skeleton skeleton-text" style={{ width: '60%' }} />
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -96,25 +112,41 @@ function GroupDetailPage({ user }) {
               <textarea className="form-input" value={editForm.description}
                 onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
             </div>
-            <div className="flex gap-8">
+            <div className="flex gap-2">
               <button className="btn btn-primary btn-small" type="submit">Save</button>
-              <button className="btn btn-small" type="button" onClick={() => setEditing(false)}>Cancel</button>
+              <button className="btn btn-secondary btn-small" type="button" onClick={() => setEditing(false)}>Cancel</button>
             </div>
           </form>
         ) : (
           <>
-            <div className="flex-between">
-              <h1 className="page-title" style={{ marginBottom: 0 }}>{group.name}</h1>
-              <div className="flex gap-8">
-                {isAdmin && <button className="btn btn-small btn-secondary" onClick={() => setEditing(true)}>Edit</button>}
+            <div className="flex-between" style={{ marginBottom: 'var(--space-3)' }}>
+              <div className="flex items-center gap-3">
+                <h1 className="page-title" style={{ marginBottom: 0 }}>{group.name}</h1>
+                {group.isPrivate && (
+                  <span className="private-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    Private
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <button className="btn btn-small btn-secondary" onClick={() => setEditing(true)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                  </button>
+                )}
                 {isAdmin && <button className="btn btn-small btn-danger" onClick={handleDelete}>Delete</button>}
                 {isMember && !isAdmin && <button className="btn btn-small btn-outline" onClick={handleLeave}>Leave</button>}
               </div>
             </div>
-            <p className="text-muted mt-10">{group.description}</p>
-            <p style={{ fontSize: 13, marginTop: 6 }}>
-              {group.subject} · Year {group.year} · Semester {group.semester} · {group.isPrivate ? '🔒 Private' : '🌐 Public'}
-            </p>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{group.description}</p>
+            <div className="group-card-meta" style={{ marginTop: 'var(--space-3)' }}>
+              {group.subject && <span>{group.subject}</span>}
+              <span>Year {group.year}</span>
+              <span>Semester {group.semester}</span>
+              <span>{group.isPrivate ? 'Private' : 'Public'}</span>
+            </div>
           </>
         )}
       </div>
@@ -122,10 +154,16 @@ function GroupDetailPage({ user }) {
       {/* Pending requests (admin only) */}
       {isAdmin && group.pendingRequests?.length > 0 && (
         <div className="card">
-          <h3>Pending Requests</h3>
+          <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
+            Pending Requests
+            <span className="section-count" style={{ marginLeft: 8 }}>{group.pendingRequests.length}</span>
+          </div>
           {group.pendingRequests.map(u => (
-            <div key={u._id} className="flex-between" style={{ padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span>{u.name} ({u.email})</span>
+            <div key={u._id} className="flex-between" style={{ padding: 'var(--space-2) 0', borderBottom: '1px solid var(--border-light)' }}>
+              <div className="flex items-center gap-2">
+                <div className="avatar avatar-sm">{u.name?.charAt(0)}</div>
+                <span style={{ fontSize: 'var(--text-sm)' }}>{u.name} <span style={{ color: 'var(--text-tertiary)' }}>({u.email})</span></span>
+              </div>
               <button className="btn btn-primary btn-small" onClick={() => handleApprove(u._id)}>Approve</button>
             </div>
           ))}
@@ -134,16 +172,17 @@ function GroupDetailPage({ user }) {
 
       {/* Members */}
       <div className="card">
-        <h3>Members ({group.members?.length})</h3>
-        <div className="flex gap-8 mt-10" style={{ flexWrap: 'wrap' }}>
+        <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
+          Members <span className="section-count">{group.members?.length}</span>
+        </div>
+        <div className="flex gap-2 flex-wrap">
           {group.members?.map(m => (
-            <Link key={m._id} to={`/profile/${m._id}`}
-              style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#f5f5f5', borderRadius: 20, fontSize: 13 }}>
-              <div className="avatar" style={{ width: 24, height: 24, fontSize: 11 }}>
+            <Link key={m._id} to={`/profile/${m._id}`} className="member-chip">
+              <div className="avatar avatar-sm" style={{ width: 22, height: 22, fontSize: 10 }}>
                 {m.name?.charAt(0)}
               </div>
               {m.name}
-              {m._id === group.admin?._id && <span style={{ color: '#e94560', fontSize: 11 }}> (admin)</span>}
+              {m._id === group.admin?._id && <span style={{ color: 'var(--accent)', fontSize: 'var(--text-xs)' }}>(admin)</span>}
             </Link>
           ))}
         </div>
@@ -151,6 +190,11 @@ function GroupDetailPage({ user }) {
 
       {/* Posts */}
       {isMember && <PostForm groupId={id} onCreated={loadPosts} />}
+      {posts.length === 0 && isMember && (
+        <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
+          <div className="empty-state-text">No posts yet in this group. Start the conversation!</div>
+        </div>
+      )}
       {posts.map(post => (
         <PostCard key={post._id} post={post} currentUserId={user._id}
           onUpdate={loadPosts} onDelete={loadPosts} />
