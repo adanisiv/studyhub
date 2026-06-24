@@ -127,8 +127,11 @@ function App() {
               <Route path="/profile/:id" element={
                 <Protected><div className="main"><ProfilePage currentUser={user} /></div></Protected>
               } />
+              <Route path="/chat" element={
+                <Protected><ChatPage user={user} /></Protected>
+              } />
               <Route path="/chat/:friendId" element={
-                <Protected><div className="main"><ChatPage user={user} /></div></Protected>
+                <Protected><ChatPage user={user} /></Protected>
               } />
               <Route path="/stats" element={
                 <Protected><div className="main"><StatsPage /></div></Protected>

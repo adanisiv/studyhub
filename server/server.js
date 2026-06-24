@@ -56,6 +56,7 @@ app.use('/api/groups',        require('./routes/groupRoutes'));
 app.use('/api/posts',         require('./routes/postRoutes'));
 app.use('/api/stats',         require('./routes/statsRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/messages',      require('./routes/messageRoutes'));
 
 // make io accessible to controllers via app
 app.set('io', io);
