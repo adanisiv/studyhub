@@ -5,12 +5,51 @@ import PostCard from '../components/common/PostCard';
 import { useToast } from '../components/common/Toast';
 import { useConfirm } from '../components/common/ConfirmDialog';
 
+// ── Achievements definition ──────────────────────────────────────────────────
+
+const ALL_ACHIEVEMENTS = [
+  { id: 'first_post',    icon: '✍️', name: 'First Post',       desc: 'Published your first post',    check: (p, f, g) => p >= 1 },
+  { id: 'author',        icon: '📝', name: 'Author',           desc: 'Published 5+ posts',            check: (p, f, g) => p >= 5 },
+  { id: 'prolific',      icon: '🚀', name: 'Prolific',         desc: 'Published 25+ posts',           check: (p, f, g) => p >= 25 },
+  { id: 'first_friend',  icon: '🤝', name: 'Connected',        desc: 'Made your first friend',        check: (p, f, g) => f >= 1 },
+  { id: 'networker',     icon: '🌐', name: 'Networker',        desc: 'Made 5+ friends',               check: (p, f, g) => f >= 5 },
+  { id: 'social_hub',    icon: '⭐', name: 'Social Hub',       desc: 'Made 15+ friends',              check: (p, f, g) => f >= 15 },
+  { id: 'team_player',   icon: '👥', name: 'Team Player',      desc: 'Joined your first group',       check: (p, f, g) => g >= 1 },
+  { id: 'community',     icon: '🏛️', name: 'Community Builder', desc: 'Joined 5+ groups',            check: (p, f, g) => g >= 5 },
+];
+
+function Achievements({ posts, friends, groups }) {
+  const postCount = posts.length;
+  const friendCount = friends?.length || 0;
+  const groupCount = groups?.length || 0;
+
+  return (
+    <div className="card">
+      <h2 className="section-title" style={{ marginBottom: 'var(--space-4)' }}>Achievements</h2>
+      <div className="achievements-grid">
+        {ALL_ACHIEVEMENTS.map(a => {
+          const earned = a.check(postCount, friendCount, groupCount);
+          return (
+            <div key={a.id} className={`achievement-badge ${earned ? 'earned' : 'locked'}`} title={a.desc}>
+              {earned && <span className="achievement-checkmark">✓</span>}
+              <span className="achievement-icon">{a.icon}</span>
+              <span className="achievement-name">{a.name}</span>
+              <span className="achievement-desc">{a.desc}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProfilePage({ currentUser }) {
   const { id } = useParams();
   const toast = useToast();
   const confirm = useConfirm();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [userGroups, setUserGroups] = useState([]);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const canvasRef = useRef(null);
@@ -38,7 +77,17 @@ function ProfilePage({ currentUser }) {
     }
   };
 
-  useEffect(() => { loadProfile(); loadPosts(); }, [id]);
+  const loadGroups = async () => {
+    try {
+      const res = await API.get('/groups');
+      const memberOf = res.data.filter(g => g.members?.some(m => (m._id || m) === id));
+      setUserGroups(memberOf);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => { loadProfile(); loadPosts(); loadGroups(); }, [id]);
 
   // --- Canvas: profile banner with retina support ---
   useEffect(() => {
@@ -239,6 +288,9 @@ function ProfilePage({ currentUser }) {
           )}
         </div>
       </div>
+
+      {/* Achievements */}
+      <Achievements posts={posts} friends={profile.friends} groups={userGroups} />
 
       {/* Own posts */}
       {isOwnProfile && (

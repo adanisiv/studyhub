@@ -37,29 +37,38 @@ exports.create = async (req, res) => {
   }
 };
 
-// GET /api/posts/feed
+// GET /api/posts/feed?page=1&limit=15
 exports.feed = async (req, res) => {
   try {
     const User = require('../models/User');
     const user = await User.findById(req.userId);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 15);
+    const skip = (page - 1) * limit;
 
     const groups = await Group.find({ members: req.userId }).select('_id');
     const groupIds = groups.map(g => g._id);
 
-    const posts = await Post.find({
+    const query = {
       $or: [
         { group: { $in: groupIds } },
         { author: { $in: user.friends }, group: null },
         { author: req.userId }
       ]
-    })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .populate('author', 'name email avatar')
-      .populate('group', 'name')
-      .populate('comments.author', 'name avatar');
+    };
 
-    res.json(posts);
+    const [posts, total] = await Promise.all([
+      Post.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('author', 'name email avatar')
+        .populate('group', 'name')
+        .populate('comments.author', 'name avatar'),
+      Post.countDocuments(query)
+    ]);
+
+    res.json({ posts, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
