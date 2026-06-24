@@ -1,15 +1,15 @@
-/* ============================================
-   StudyHub — Design System & Global Styles
+﻿/* ============================================
+   StudyHub ג€” Design System & Global Styles
    CSS3 features used (course requirement):
-   1. @font-face        → in index.html (Rubik font)
-   2. border-radius     → everywhere (.card, .btn, .avatar, etc.)
-   3. text-shadow       → .page-title, .auth-bg-text
-   4. transition        → .btn, .card, .nav-link, .post-card
-   5. multiple-columns  → .columns-layout
+   1. @font-face        ג†’ in index.html (Plus Jakarta Sans font)
+   2. border-radius     ג†’ everywhere (.card, .btn, .avatar, etc.)
+   3. text-shadow       ג†’ .page-title, .auth-bg-text
+   4. transition        ג†’ .btn, .card, .nav-link, .post-card
+   5. multiple-columns  ג†’ .columns-layout
    ============================================ */
 
 /* ===========================================
-   DESIGN SYSTEM — CSS Custom Properties
+   DESIGN SYSTEM ג€” CSS Custom Properties
    =========================================== */
 
 :root {
@@ -199,7 +199,7 @@
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 body {
-  font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;  /* @font-face */
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;  /* @font-face */
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
@@ -665,7 +665,7 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-md);                         /* CSS3: border-radius */
   font-size: var(--text-sm);
   font-weight: 500;
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
   transition: all var(--duration-base) var(--ease-out);    /* CSS3: transition */
   display: inline-flex;
@@ -795,7 +795,7 @@ a:hover { text-decoration: underline; }
   margin-bottom: var(--space-5);
   color: var(--text-primary);
   letter-spacing: -0.3px;
-  text-shadow: none;                                       /* CSS3: text-shadow — clean modern look */
+  text-shadow: none;                                       /* CSS3: text-shadow ג€” clean modern look */
 }
 
 .page-subtitle {
@@ -824,7 +824,7 @@ a:hover { text-decoration: underline; }
   border: 1.5px solid var(--border-input);
   border-radius: var(--radius-md);                         /* CSS3: border-radius */
   font-size: var(--text-base);
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--bg-input);
   color: var(--text-primary);
   transition: all var(--duration-base) var(--ease-out);    /* CSS3: transition */
@@ -956,7 +956,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   min-height: 44px;
 }
 .post-action-btn:hover {
@@ -1093,7 +1093,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 @media (max-width: 600px) { .columns-layout { column-count: 1; } }
 
 /* ===========================================
-   CHAT — redesigned
+   CHAT ג€” redesigned
    =========================================== */
 
 /* Full-page layout (no .main wrapper) */
@@ -1107,7 +1107,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .chat-page { height: calc(100vh - var(--navbar-height)); }
 }
 
-/* ── Sidebar ── */
+/* ג”€ג”€ Sidebar ג”€ג”€ */
 .chat-sidebar {
   width: 320px;
   flex-shrink: 0;
@@ -1211,7 +1211,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   flex-shrink: 0;
 }
 
-/* ── Main area ── */
+/* ג”€ג”€ Main area ג”€ג”€ */
 .chat-main {
   flex: 1;
   display: flex;
@@ -1237,7 +1237,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   flex-shrink: 0;
 }
 
-/* ── Messages area ── */
+/* ג”€ג”€ Messages area ג”€ג”€ */
 .chat-messages-area {
   flex: 1;
   overflow-y: auto;
@@ -1316,7 +1316,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   background: var(--border-light);
 }
 
-/* ── Typing bar ── */
+/* ג”€ג”€ Typing bar ג”€ג”€ */
 .chat-typing-bar {
   padding: 4px var(--space-5) 2px;
   height: 22px;
@@ -1348,7 +1348,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   30%           { transform: translateY(-4px); opacity: 1; }
 }
 
-/* ── Input bar ── */
+/* ג”€ג”€ Input bar ג”€ג”€ */
 .chat-input-bar {
   padding: var(--space-3) var(--space-4);
   background: var(--bg-card);
@@ -1365,7 +1365,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   border-radius: 22px;
   padding: 10px 18px;
   font-size: var(--text-sm);
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: var(--text-primary);
   outline: none;
   resize: none;
@@ -1399,7 +1399,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 }
 .chat-send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
-/* ── Mobile ── */
+/* ג”€ג”€ Mobile ג”€ג”€ */
 .chat-back-btn { display: none; }
 @media (max-width: 700px) {
   .chat-sidebar { width: 100%; position: absolute; z-index: 10; height: 100%; display: none; }
@@ -1408,7 +1408,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   .chat-back-btn { display: flex !important; }
 }
 
-/* ── Online indicator kept for legacy refs ── */
+/* ג”€ג”€ Online indicator kept for legacy refs ג”€ג”€ */
 .status-dot {
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--success); display: inline-block;
@@ -1502,7 +1502,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: all var(--duration-base) var(--ease-out);
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   flex: 1;
   text-align: center;
 }
@@ -1667,7 +1667,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   position: relative;
   overflow: hidden;
 }
-/* decorative background text — CSS3: text-shadow */
+/* decorative background text ג€” CSS3: text-shadow */
 .auth-page::before {
   content: 'StudyHub';
   position: absolute;
