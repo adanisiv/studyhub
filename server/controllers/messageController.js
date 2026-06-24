@@ -37,6 +37,11 @@ exports.conversations = async (req, res) => {
 // GET /api/messages/history/:roomId
 exports.history = async (req, res) => {
   try {
+    // Verify the requesting user is a participant in this room
+    const parts = req.params.roomId.split('_');
+    if (parts.length !== 2 || !parts.includes(req.userId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     const messages = await Message.find({ roomId: req.params.roomId })
       .sort({ createdAt: 1 })
       .limit(200)

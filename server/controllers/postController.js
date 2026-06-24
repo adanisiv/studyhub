@@ -112,7 +112,9 @@ exports.search = async (req, res) => {
     const filter = {};
 
     if (req.query.keyword) {
-      filter.content = { $regex: req.query.keyword, $options: 'i' };
+      // Escape special regex chars to prevent ReDoS
+      const escaped = req.query.keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.content = { $regex: escaped, $options: 'i' };
     }
     if (req.query.type) {
       filter.type = req.query.type;

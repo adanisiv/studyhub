@@ -39,10 +39,11 @@ const groupMessages = (messages) => {
   let current = null;
   for (const msg of messages) {
     const senderId = msg.sender?._id || msg.sender;
+    if (!senderId) continue; // skip malformed messages
     if (current && current.senderId === senderId) {
       current.messages.push(msg);
     } else {
-      current = { senderId, sender: msg.sender, messages: [msg] };
+      current = { senderId, sender: msg.sender || { name: '?' }, messages: [msg] };
       groups.push(current);
     }
   }
@@ -107,6 +108,7 @@ function ChatPage({ user }) {
   const [conversations, setConversations] = useState([]);
   const [convsLoading, setConvsLoading] = useState(true);
   const [friend, setFriend] = useState(null);
+  const [friendLoading, setFriendLoading] = useState(false);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
@@ -119,8 +121,15 @@ function ChatPage({ user }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const prevRoomRef = useRef(null);
+  // Refs so socket handlers always see current values without re-registering
+  const roomIdRef = useRef(null);
+  const friendIdRef = useRef(null);
 
   const roomId = friendId ? makeRoomId(user._id, friendId) : null;
+
+  // Keep refs in sync with state/params
+  useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
+  useEffect(() => { friendIdRef.current = friendId; }, [friendId]);
 
   // ── Socket setup (once) ───────────────────────────────────────────────────
 
@@ -129,6 +138,9 @@ function ChatPage({ user }) {
     const socket = io('http://localhost:5000', { auth: { token } });
     socketRef.current = socket;
 
+    socket.on('connect_error', (err) => {
+      console.error('Chat socket error:', err.message);
+    });
     socket.on('user_online', ({ userId }) => {
       setOnlineUsers(prev => new Set([...prev, userId]));
     });
@@ -137,25 +149,25 @@ function ChatPage({ user }) {
     });
     socket.on('receive_message', (msg) => {
       setMessages(prev => [...prev, msg]);
-      // Update conversation list preview
+      // Update conversation list using refs to avoid stale closure
       setConversations(prev => prev.map(c => {
         const r = makeRoomId(user._id, c.friend._id);
-        if (r !== (msg.roomId || roomId)) return c;
-        const isActive = c.friend._id === friendId;
-        return { ...c, lastMsg: msg, unreadCount: isActive ? 0 : c.unreadCount + 1 };
+        if (r !== (msg.roomId || roomIdRef.current)) return c;
+        const isActive = c.friend._id === friendIdRef.current;
+        return { ...c, lastMsg: msg, unreadCount: isActive ? 0 : (c.unreadCount || 0) + 1 };
       }));
     });
     socket.on('chat_history', (history) => {
       setMessages(history);
     });
     socket.on('user_typing', ({ userId: tid }) => {
-      if (tid === friendId) setTyping(true);
+      if (tid === friendIdRef.current) setTyping(true);
     });
     socket.on('user_stop_typing', ({ userId: tid }) => {
-      if (tid === friendId) setTyping(false);
+      if (tid === friendIdRef.current) setTyping(false);
     });
     socket.on('messages_read', ({ roomId: rid, readerId }) => {
-      if (rid !== roomId) return;
+      if (rid !== roomIdRef.current) return;
       setMessages(prev => prev.map(m => {
         const alreadyRead = m.readBy?.some(id => (id?._id || id)?.toString() === readerId);
         if (alreadyRead) return m;
@@ -164,10 +176,18 @@ function ChatPage({ user }) {
     });
 
     return () => {
-      socket.off();
+      // Explicit teardown — avoids ghost listeners if component remounts
+      socket.off('connect_error');
+      socket.off('user_online');
+      socket.off('user_offline');
+      socket.off('receive_message');
+      socket.off('chat_history');
+      socket.off('user_typing');
+      socket.off('user_stop_typing');
+      socket.off('messages_read');
       socket.disconnect();
     };
-  }, []);  // intentionally once
+  }, []);  // intentionally once — refs handle dynamic values
 
   // ── Join/leave room when friendId changes ─────────────────────────────────
 
@@ -200,8 +220,12 @@ function ChatPage({ user }) {
   // ── Load friend details ───────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!friendId) { setFriend(null); return; }
-    API.get(`/users/${friendId}`).then(res => setFriend(res.data)).catch(console.error);
+    if (!friendId) { setFriend(null); setFriendLoading(false); return; }
+    setFriendLoading(true);
+    API.get(`/users/${friendId}`)
+      .then(res => setFriend(res.data))
+      .catch(() => setFriend(null))
+      .finally(() => setFriendLoading(false));
     setMobileSidebar(false);
   }, [friendId]);
 
@@ -216,7 +240,7 @@ function ChatPage({ user }) {
   const handleSend = (e) => {
     e?.preventDefault();
     if (!text.trim() || !socketRef.current || !roomId) return;
-    socketRef.current.emit('send_message', { roomId, senderId: user._id, text: text.trim() });
+    socketRef.current.emit('send_message', { roomId, text: text.trim() });
     socketRef.current.emit('stop_typing', { roomId });
     clearTimeout(typingTimeoutRef.current);
     setText('');
@@ -373,7 +397,7 @@ function ChatPage({ user }) {
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 'var(--text-md)', color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                    {friend?.name || 'Loading...'}
+                    {friendLoading ? 'Loading…' : (friend?.name || 'Unknown user')}
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: isFriendOnline ? 'var(--success)' : 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: isFriendOnline ? 'var(--success)' : 'var(--text-tertiary)', display: 'inline-block' }} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
 import API from '../api/axios';
 
@@ -17,11 +17,7 @@ function StatsPage() {
     }).catch(console.error);
   }, []);
 
-  useEffect(() => {
-    loadCharts();
-  }, [selectedGroup]);
-
-  const loadCharts = async () => {
+  const loadCharts = useCallback(async () => {
     setLoading(true);
     const params = selectedGroup ? { groupId: selectedGroup } : {};
     try {
@@ -44,7 +40,12 @@ function StatsPage() {
       console.error(err);
     }
     setLoading(false);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroup]);
+
+  useEffect(() => {
+    loadCharts();
+  }, [loadCharts]);
 
   const getChartColors = () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';

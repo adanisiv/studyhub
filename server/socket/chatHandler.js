@@ -36,9 +36,16 @@ module.exports = (io) => {
       }
     });
 
-    socket.on('send_message', async ({ roomId, senderId, text }) => {
+    socket.on('send_message', async ({ roomId, text }) => {
+      // Always use the authenticated socket.userId — never trust client-supplied senderId
+      if (!userId || !roomId || !text?.trim()) return;
+      // Verify this user belongs to the room
+      const parts = roomId.split('_');
+      if (parts.length !== 2 || !parts.includes(userId)) {
+        return socket.emit('error_message', { error: 'Unauthorized room' });
+      }
       try {
-        const message = await Message.create({ roomId, sender: senderId, text, readBy: [senderId] });
+        const message = await Message.create({ roomId, sender: userId, text: text.trim(), readBy: [userId] });
         const populated = await message.populate('sender', 'name avatar');
         io.to(roomId).emit('receive_message', populated);
       } catch (err) {

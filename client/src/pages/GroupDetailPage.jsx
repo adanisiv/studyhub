@@ -183,7 +183,7 @@ function GroupDetailPage({ user }) {
           {group.pendingRequests.map(u => (
             <div key={u._id} className="flex-between" style={{ padding: 'var(--space-2) 0', borderBottom: '1px solid var(--border-light)' }}>
               <div className="flex items-center gap-2">
-                <div className="avatar avatar-sm">{u.name?.charAt(0)}</div>
+                <div className="avatar avatar-sm">{u.name?.charAt(0) || '?'}</div>
                 <span style={{ fontSize: 'var(--text-sm)' }}>{u.name} <span style={{ color: 'var(--text-tertiary)' }}>({u.email})</span></span>
               </div>
               <button className="btn btn-primary btn-small" onClick={() => handleApprove(u._id)} disabled={approveLoading === u._id}>
@@ -203,7 +203,7 @@ function GroupDetailPage({ user }) {
           {group.members?.map(m => (
             <Link key={m._id} to={`/profile/${m._id}`} className="member-chip">
               <div className="avatar avatar-sm" style={{ width: 22, height: 22, fontSize: 10 }}>
-                {m.name?.charAt(0)}
+                {m.name?.charAt(0) || '?'}
               </div>
               {m.name}
               {m._id === group.admin?._id && <span style={{ color: 'var(--accent)', fontSize: 'var(--text-xs)' }}>(admin)</span>}
