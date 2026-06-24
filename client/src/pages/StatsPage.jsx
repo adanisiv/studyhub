@@ -40,8 +40,7 @@ function StatsPage() {
       console.error(err);
     }
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroup]);
+  }, [selectedGroup]); // drawBarChart/drawPieChart are stable refs, selectedGroup is the only real dep
 
   useEffect(() => {
     loadCharts();
