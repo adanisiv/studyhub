@@ -62,7 +62,7 @@ function RegisterPage({ onLogin }) {
               <div className="form-group">
                 <label htmlFor="reg-year">Year</label>
                 <select id="reg-year" className="form-input" name="year" value={form.year} onChange={handleChange}>
-                  {[1,2,3,4,5,6].map(y => <option key={y} value={y}>Year {y}</option>)}
+                  {[1,2,3,4].map(y => <option key={y} value={y}>Year {y}</option>)}
                 </select>
               </div>
             </div>
