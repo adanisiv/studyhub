@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { ToastProvider } from './components/common/Toast';
+import { ConfirmProvider } from './components/common/ConfirmDialog';
 import Navbar from './components/common/Navbar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -87,50 +89,54 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app">
-        {user && (
-          <Navbar
-            user={user}
-            onLogout={logout}
-            notifications={notifications}
-            unreadCount={unreadCount}
-            onMarkAllRead={handleMarkAllRead}
-            onDeleteNotification={handleDeleteNotification}
-          />
-        )}
-        <Routes>
-          {/* Auth pages — full-page layout, no .main wrapper */}
-          <Route path="/login" element={
-            user ? <Navigate to="/" /> : <LoginPage onLogin={login} />
-          } />
-          <Route path="/register" element={
-            user ? <Navigate to="/" /> : <RegisterPage onLogin={login} />
-          } />
+      <ToastProvider>
+        <ConfirmProvider>
+          <div className="app">
+            {user && (
+              <Navbar
+                user={user}
+                onLogout={logout}
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkAllRead={handleMarkAllRead}
+                onDeleteNotification={handleDeleteNotification}
+              />
+            )}
+            <Routes>
+              {/* Auth pages — full-page layout, no .main wrapper */}
+              <Route path="/login" element={
+                user ? <Navigate to="/" /> : <LoginPage onLogin={login} />
+              } />
+              <Route path="/register" element={
+                user ? <Navigate to="/" /> : <RegisterPage onLogin={login} />
+              } />
 
-          {/* App pages — wrapped in .main */}
-          <Route path="/" element={
-            <Protected><div className="main"><FeedPage user={user} /></div></Protected>
-          } />
-          <Route path="/groups" element={
-            <Protected><div className="main"><GroupsPage user={user} /></div></Protected>
-          } />
-          <Route path="/groups/:id" element={
-            <Protected><div className="main"><GroupDetailPage user={user} /></div></Protected>
-          } />
-          <Route path="/search" element={
-            <Protected><div className="main"><SearchPage user={user} /></div></Protected>
-          } />
-          <Route path="/profile/:id" element={
-            <Protected><div className="main"><ProfilePage currentUser={user} /></div></Protected>
-          } />
-          <Route path="/chat/:friendId" element={
-            <Protected><div className="main"><ChatPage user={user} /></div></Protected>
-          } />
-          <Route path="/stats" element={
-            <Protected><div className="main"><StatsPage /></div></Protected>
-          } />
-        </Routes>
-      </div>
+              {/* App pages — wrapped in .main */}
+              <Route path="/" element={
+                <Protected><div className="main"><FeedPage user={user} /></div></Protected>
+              } />
+              <Route path="/groups" element={
+                <Protected><div className="main"><GroupsPage user={user} /></div></Protected>
+              } />
+              <Route path="/groups/:id" element={
+                <Protected><div className="main"><GroupDetailPage user={user} /></div></Protected>
+              } />
+              <Route path="/search" element={
+                <Protected><div className="main"><SearchPage user={user} /></div></Protected>
+              } />
+              <Route path="/profile/:id" element={
+                <Protected><div className="main"><ProfilePage currentUser={user} /></div></Protected>
+              } />
+              <Route path="/chat/:friendId" element={
+                <Protected><div className="main"><ChatPage user={user} /></div></Protected>
+              } />
+              <Route path="/stats" element={
+                <Protected><div className="main"><StatsPage /></div></Protected>
+              } />
+            </Routes>
+          </div>
+        </ConfirmProvider>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

@@ -26,7 +26,7 @@ function LoginPage({ onLogin }) {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="brand-icon">S</span>
+            <span className="brand-icon" aria-hidden="true">S</span>
             StudyHub
           </div>
           <h1 className="auth-title">Welcome back</h1>
@@ -36,18 +36,18 @@ function LoginPage({ onLogin }) {
         <div className="auth-card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Email address</label>
-              <input className="form-input" type="email" value={email}
-                onChange={e => setEmail(e.target.value)} placeholder="you@university.edu" required />
+              <label htmlFor="login-email">Email address</label>
+              <input id="login-email" className="form-input" type="email" value={email}
+                onChange={e => setEmail(e.target.value)} placeholder="you@university.edu" required autoComplete="email" />
             </div>
             <div className="form-group">
-              <label>Password</label>
-              <input className="form-input" type="password" value={password}
-                onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required />
+              <label htmlFor="login-password">Password</label>
+              <input id="login-password" className="form-input" type="password" value={password}
+                onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required autoComplete="current-password" />
             </div>
-            {error && <p className="error-text">{error}</p>}
+            {error && <p className="error-text" role="alert">{error}</p>}
             <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }} disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? <><span className="btn-spinner" /> Signing in...</> : 'Sign in'}
             </button>
           </form>
         </div>

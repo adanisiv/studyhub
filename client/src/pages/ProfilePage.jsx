@@ -2,9 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
+import { useToast } from '../components/common/Toast';
+import { useConfirm } from '../components/common/ConfirmDialog';
 
 function ProfilePage({ currentUser }) {
   const { id } = useParams();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [editing, setEditing] = useState(false);
@@ -36,15 +40,20 @@ function ProfilePage({ currentUser }) {
 
   useEffect(() => { loadProfile(); loadPosts(); }, [id]);
 
-  // --- Canvas: profile banner (React Canvas requirement) ---
+  // --- Canvas: profile banner with retina support ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !profile) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = 860;
+    const h = 110;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
     const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
+    ctx.scale(dpr, dpr);
 
-    // gradient background
     const grad = ctx.createLinearGradient(0, 0, w, h);
     grad.addColorStop(0, '#0f0f1a');
     grad.addColorStop(0.4, '#1a1a3e');
@@ -52,7 +61,6 @@ function ProfilePage({ currentUser }) {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // decorative circles
     for (let i = 0; i < 8; i++) {
       ctx.beginPath();
       ctx.arc(60 + i * 100, 55 + Math.sin(i * 0.8) * 25, 20 + i * 4, 0, Math.PI * 2);
@@ -60,19 +68,16 @@ function ProfilePage({ currentUser }) {
       ctx.fill();
     }
 
-    // user initial (big letter)
     const initial = profile.name?.charAt(0)?.toUpperCase() || '?';
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 44px Rubik, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(initial, 70, 78);
 
-    // user name
     ctx.font = 'bold 22px Rubik, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(profile.name, 130, 58);
 
-    // department + year
     ctx.font = '13px Rubik, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.fillText(`${profile.department || 'No department'} · Year ${profile.year}`, 130, 82);
@@ -94,40 +99,41 @@ function ProfilePage({ currentUser }) {
     try {
       await API.put(`/users/${id}`, editForm);
       setEditing(false);
+      toast('Profile updated', 'success');
       loadProfile();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed');
+      toast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
   const handleAddFriend = async () => {
     try {
       await API.post(`/users/${currentUser._id}/friend`, { friendId: id });
-      alert('Friend added!');
+      toast('Friend added!', 'success');
       loadProfile();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed');
+      toast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
   const handleRemoveFriend = async () => {
     try {
       await API.delete(`/users/${currentUser._id}/friend`, { data: { friendId: id } });
-      alert('Friend removed');
+      toast('Friend removed', 'info');
       loadProfile();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed');
+      toast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm('Delete your account? This cannot be undone.')) return;
+    if (!await confirm('Delete your account? This cannot be undone.', 'Delete Account')) return;
     try {
       await API.delete(`/users/${id}`);
       localStorage.clear();
       window.location.href = '/login';
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed');
+      toast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
@@ -145,26 +151,26 @@ function ProfilePage({ currentUser }) {
   return (
     <div>
       {/* Canvas banner — React Canvas requirement */}
-      <canvas ref={canvasRef} width={860} height={110} className="profile-canvas" />
+      <canvas ref={canvasRef} width={860} height={110} className="profile-canvas" aria-label={`Profile banner for ${profile.name}`} />
 
       <div className="profile-card">
         <div className="profile-info">
           {editing ? (
             <form onSubmit={handleUpdate}>
               <div className="form-group">
-                <label>Name</label>
-                <input className="form-input" value={editForm.name}
+                <label htmlFor="pe-name">Name</label>
+                <input id="pe-name" className="form-input" value={editForm.name}
                   onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
                 <div className="form-group">
-                  <label>Department</label>
-                  <input className="form-input" value={editForm.department}
+                  <label htmlFor="pe-dept">Department</label>
+                  <input id="pe-dept" className="form-input" value={editForm.department}
                     onChange={e => setEditForm({ ...editForm, department: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label>Year</label>
-                  <select className="form-input" value={editForm.year}
+                  <label htmlFor="pe-year">Year</label>
+                  <select id="pe-year" className="form-input" value={editForm.year}
                     onChange={e => setEditForm({ ...editForm, year: Number(e.target.value) })}>
                     {[1,2,3,4,5,6].map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -187,8 +193,8 @@ function ProfilePage({ currentUser }) {
               </div>
               <div className="profile-actions">
                 {isOwnProfile && (
-                  <button className="btn btn-secondary btn-small" onClick={() => setEditing(true)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <button className="btn btn-secondary btn-small" onClick={() => setEditing(true)} aria-label="Edit profile">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Edit Profile
                   </button>
                 )}
@@ -197,7 +203,7 @@ function ProfilePage({ currentUser }) {
                 )}
                 {!isOwnProfile && !isFriend && (
                   <button className="btn btn-primary btn-small" onClick={handleAddFriend}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
                     Add Friend
                   </button>
                 )}
@@ -206,7 +212,7 @@ function ProfilePage({ currentUser }) {
                 )}
                 {!isOwnProfile && (
                   <Link to={`/chat/${id}`} className="btn btn-secondary btn-small">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                     Message
                   </Link>
                 )}
@@ -218,9 +224,9 @@ function ProfilePage({ currentUser }) {
 
       {/* Friends list */}
       <div className="card">
-        <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
+        <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
           Friends <span className="section-count">{profile.friends?.length || 0}</span>
-        </div>
+        </h2>
         <div className="flex gap-2 flex-wrap">
           {profile.friends?.map(f => (
             <Link key={f._id} to={`/profile/${f._id}`} className="member-chip">
@@ -238,7 +244,7 @@ function ProfilePage({ currentUser }) {
       {isOwnProfile && (
         <>
           <div className="section-header mt-20">
-            <div className="section-title">My Posts <span className="section-count">{posts.length}</span></div>
+            <h2 className="section-title">My Posts <span className="section-count">{posts.length}</span></h2>
           </div>
           {posts.length === 0 ? (
             <div className="empty-state" style={{ padding: 'var(--space-8)' }}>

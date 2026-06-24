@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
@@ -51,12 +52,13 @@ function FeedPage({ user }) {
       ) : posts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
             </svg>
           </div>
           <div className="empty-state-title">No posts yet</div>
           <div className="empty-state-text">Join some groups to see posts in your feed, or create the first post!</div>
+          <Link to="/groups" className="btn btn-primary btn-small">Browse Groups</Link>
         </div>
       ) : (
         posts.map(post => (

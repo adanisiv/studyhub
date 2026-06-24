@@ -19,10 +19,16 @@
       font-weight: 700;
     }
   </style>
-  <!-- Lucide Icons CDN for professional SVG icons -->
-  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Prevent theme flash: apply saved theme or OS preference before React renders -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('theme');
+      if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
   <div id="root"></div>

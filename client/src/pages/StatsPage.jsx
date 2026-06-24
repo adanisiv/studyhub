@@ -6,11 +6,15 @@ function StatsPage() {
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [loading, setLoading] = useState(true);
+  const [kpis, setKpis] = useState({ totalPosts: 0, totalGroups: 0, topType: '-', avgPerMonth: 0 });
   const barRef = useRef(null);
   const pieRef = useRef(null);
 
   useEffect(() => {
-    API.get('/groups').then(res => setGroups(res.data)).catch(console.error);
+    API.get('/groups').then(res => {
+      setGroups(res.data);
+      setKpis(prev => ({ ...prev, totalGroups: res.data.length }));
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -25,8 +29,17 @@ function StatsPage() {
         API.get('/stats/posts-per-month', { params }),
         API.get('/stats/post-types', { params })
       ]);
-      drawBarChart(monthRes.data);
-      drawPieChart(typeRes.data);
+
+      const monthData = monthRes.data;
+      const typeData = typeRes.data;
+
+      const totalPosts = typeData.reduce((s, d) => s + d.count, 0);
+      const topType = typeData.length > 0 ? typeData.reduce((a, b) => a.count > b.count ? a : b).type : '-';
+      const avgPerMonth = monthData.length > 0 ? Math.round(totalPosts / monthData.length) : 0;
+      setKpis(prev => ({ ...prev, totalPosts, topType, avgPerMonth }));
+
+      drawBarChart(monthData);
+      drawPieChart(typeData);
     } catch (err) {
       console.error(err);
     }
@@ -65,14 +78,15 @@ function StatsPage() {
 
     const svg = d3.select(container)
       .append('svg')
-      .attr('viewBox', `0 0 400 250`)
+      .attr('viewBox', '0 0 400 250')
+      .attr('role', 'img')
+      .attr('aria-label', 'Bar chart showing posts per month')
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleBand().domain(data.map(d => d.month)).range([0, width]).padding(0.35);
     const y = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).nice().range([height, 0]);
 
-    // bars with gradient
     const defs = svg.append('defs');
     const gradient = defs.append('linearGradient').attr('id', 'barGrad').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
     gradient.append('stop').attr('offset', '0%').attr('stop-color', '#f93a5b');
@@ -108,7 +122,6 @@ function StatsPage() {
     svg.selectAll('.tick line').style('stroke', colors.gridLine).style('opacity', 0.5);
     svg.selectAll('.domain').style('stroke', colors.gridLine);
 
-    // labels
     svg.selectAll('.label')
       .data(data)
       .enter()
@@ -149,6 +162,8 @@ function StatsPage() {
     const svg = d3.select(container)
       .append('svg')
       .attr('viewBox', `0 0 ${size} ${size}`)
+      .attr('role', 'img')
+      .attr('aria-label', 'Pie chart showing post type distribution')
       .append('g')
       .attr('transform', `translate(${size / 2},${size / 2})`);
 
@@ -163,7 +178,6 @@ function StatsPage() {
       .attr('fill', d => typeColors[d.data.type] || '#94a3b8')
       .style('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))');
 
-    // labels
     const labelArc = d3.arc().innerRadius(radius * 0.78).outerRadius(radius * 0.78);
     svg.selectAll('text')
       .data(pie(data))
@@ -181,13 +195,33 @@ function StatsPage() {
     <div>
       <h1 className="page-title">Statistics</h1>
 
+      {/* KPI Summary Tiles */}
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-value">{kpis.totalPosts}</div>
+          <div className="kpi-label">Total Posts</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-value">{kpis.totalGroups}</div>
+          <div className="kpi-label">Groups</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-value" style={{ textTransform: 'capitalize' }}>{kpis.topType}</div>
+          <div className="kpi-label">Top Post Type</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-value">{kpis.avgPerMonth}</div>
+          <div className="kpi-label">Avg / Month</div>
+        </div>
+      </div>
+
       <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
         <div className="flex items-center gap-3">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" aria-hidden="true">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
           </svg>
-          <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)' }}>Filter by group</label>
-          <select className="form-input" style={{ width: 'auto', flex: 1, maxWidth: 300 }}
+          <label htmlFor="stats-filter" style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)' }}>Filter by group</label>
+          <select id="stats-filter" className="form-input" style={{ width: 'auto', flex: 1, maxWidth: 300 }}
             value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)}>
             <option value="">All groups</option>
             {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
@@ -197,19 +231,19 @@ function StatsPage() {
 
       <div className="charts-grid">
         <div className="card">
-          <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Posts per Month</div>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Posts per Month</h2>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
           ) : (
-            <div ref={barRef}></div>
+            <div ref={barRef} />
           )}
         </div>
         <div className="card">
-          <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Post Types</div>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Post Types</h2>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
           ) : (
-            <div ref={pieRef}></div>
+            <div ref={pieRef} />
           )}
         </div>
       </div>

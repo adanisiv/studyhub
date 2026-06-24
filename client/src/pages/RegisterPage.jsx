@@ -29,7 +29,7 @@ function RegisterPage({ onLogin }) {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="brand-icon">S</span>
+            <span className="brand-icon" aria-hidden="true">S</span>
             StudyHub
           </div>
           <h1 className="auth-title">Create your account</h1>
@@ -39,36 +39,36 @@ function RegisterPage({ onLogin }) {
         <div className="auth-card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Full name</label>
-              <input className="form-input" name="name" value={form.name}
-                onChange={handleChange} placeholder="Your full name" required />
+              <label htmlFor="reg-name">Full name</label>
+              <input id="reg-name" className="form-input" name="name" value={form.name}
+                onChange={handleChange} placeholder="Your full name" required autoComplete="name" />
             </div>
             <div className="form-group">
-              <label>Email address</label>
-              <input className="form-input" name="email" type="email" value={form.email}
-                onChange={handleChange} placeholder="you@university.edu" required />
+              <label htmlFor="reg-email">Email address</label>
+              <input id="reg-email" className="form-input" name="email" type="email" value={form.email}
+                onChange={handleChange} placeholder="you@university.edu" required autoComplete="email" />
             </div>
             <div className="form-group">
-              <label>Password</label>
-              <input className="form-input" name="password" type="password" value={form.password}
-                onChange={handleChange} placeholder="Min 6 characters" required minLength={6} />
+              <label htmlFor="reg-password">Password</label>
+              <input id="reg-password" className="form-input" name="password" type="password" value={form.password}
+                onChange={handleChange} placeholder="Min 6 characters" required minLength={6} autoComplete="new-password" />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
               <div className="form-group">
-                <label>Department</label>
-                <input className="form-input" name="department" value={form.department}
+                <label htmlFor="reg-department">Department</label>
+                <input id="reg-department" className="form-input" name="department" value={form.department}
                   onChange={handleChange} placeholder="e.g. Computer Science" />
               </div>
               <div className="form-group">
-                <label>Year</label>
-                <select className="form-input" name="year" value={form.year} onChange={handleChange}>
+                <label htmlFor="reg-year">Year</label>
+                <select id="reg-year" className="form-input" name="year" value={form.year} onChange={handleChange}>
                   {[1,2,3,4,5,6].map(y => <option key={y} value={y}>Year {y}</option>)}
                 </select>
               </div>
             </div>
-            {error && <p className="error-text">{error}</p>}
+            {error && <p className="error-text" role="alert">{error}</p>}
             <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }} disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? <><span className="btn-spinner" /> Creating account...</> : 'Create account'}
             </button>
           </form>
         </div>
