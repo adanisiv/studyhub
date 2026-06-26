@@ -94,6 +94,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
             <Link to={`/profile/${user._id}`} className="nav-user-btn" aria-label={`Profile for ${user.name}`}>
               <span className="nav-user-avatar" aria-hidden="true">{initial}</span>
               {user.name?.split(' ')[0]}
+              {user.role === 'admin' && <span className="admin-badge">Admin</span>}
             </Link>
           </div>
 

@@ -129,12 +129,12 @@ exports.join = async (req, res) => {
     const group = await Group.findById(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    if (group.members.includes(req.userId)) {
+    if (group.members.some(m => m.toString() === req.userId)) {
       return res.status(400).json({ error: 'Already a member' });
     }
 
     if (group.isPrivate) {
-      if (group.pendingRequests.includes(req.userId)) {
+      if (group.pendingRequests.some(r => r.toString() === req.userId)) {
         return res.status(400).json({ error: 'Request already pending' });
       }
       group.pendingRequests.push(req.userId);

@@ -11,7 +11,7 @@ const notify = async (req, recipientId, data) => {
 // GET /api/users
 exports.list = async (req, res) => {
   try {
-    const users = await User.find().select('name email department year avatar');
+    const users = await User.find({ _id: { $ne: req.userId } }).select('name email department year avatar');
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -33,6 +33,7 @@ exports.search = async (req, res) => {
     if (req.query.year) {
       filter.year = Number(req.query.year);
     }
+    filter._id = { $ne: req.userId };
     const users = await User.find(filter).select('name email department year avatar');
     res.json(users);
   } catch (err) {

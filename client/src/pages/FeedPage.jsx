@@ -288,13 +288,13 @@ function FeedPage({ user }) {
 
       // Suggested groups: not a member
       const allGroups = Array.isArray(groupsRes.data) ? groupsRes.data : [];
-      const nonMember = allGroups.filter(g => !g.members?.some(m => (m._id || m) === user._id));
+      const nonMember = allGroups.filter(g => !g.members?.some(m => String(m._id || m) === String(user._id)));
       setSuggestedGroups(nonMember.slice(0, 3));
 
       // Suggested users: not friends and not self
       const allUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
-      const friendIds = new Set(user.friends || []);
-      const strangers = allUsers.filter(u => u._id !== user._id && !friendIds.has(u._id));
+      const friendIds = new Set((user.friends || []).map(f => String(f._id || f)));
+      const strangers = allUsers.filter(u => String(u._id) !== String(user._id) && !friendIds.has(String(u._id)));
       setSuggestedUsers(strangers.slice(0, 4));
     } catch (err) {
       console.error(err);

@@ -192,27 +192,44 @@ function StatsPage() {
       .text(d => `${d.data.type} (${d.data.count})`);
   };
 
+  const typeLabels = { question: 'Questions', material: 'Study Materials', announcement: 'Announcements' };
+
   return (
     <div>
-      <h1 className="page-title">Statistics</h1>
+      <h1 className="page-title">Statistics Dashboard</h1>
+      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-5)', marginTop: '-var(--space-2)' }}>
+        Overview of activity across all study groups. Use the filter to view stats for a specific group.
+      </p>
 
       {/* KPI Summary Tiles */}
       <div className="kpi-grid">
         <div className="kpi-card">
+          <div className="kpi-icon" style={{ color: '#6366f1' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
           <div className="kpi-value">{kpis.totalPosts}</div>
           <div className="kpi-label">Total Posts</div>
         </div>
         <div className="kpi-card">
+          <div className="kpi-icon" style={{ color: '#f93a5b' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
           <div className="kpi-value">{kpis.totalGroups}</div>
-          <div className="kpi-label">Groups</div>
+          <div className="kpi-label">Active Groups</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-value" style={{ textTransform: 'capitalize' }}>{kpis.topType}</div>
-          <div className="kpi-label">Top Post Type</div>
+          <div className="kpi-icon" style={{ color: '#f59e0b' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div className="kpi-value" style={{ textTransform: 'capitalize' }}>{typeLabels[kpis.topType] || kpis.topType}</div>
+          <div className="kpi-label">Most Popular Type</div>
         </div>
         <div className="kpi-card">
+          <div className="kpi-icon" style={{ color: '#10b981' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
           <div className="kpi-value">{kpis.avgPerMonth}</div>
-          <div className="kpi-label">Avg / Month</div>
+          <div className="kpi-label">Avg Posts / Month</div>
         </div>
       </div>
 
@@ -232,7 +249,10 @@ function StatsPage() {
 
       <div className="charts-grid">
         <div className="card">
-          <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Posts per Month</h2>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>Posts per Month</h2>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
+            Number of posts published each month
+          </p>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
           ) : (
@@ -240,11 +260,27 @@ function StatsPage() {
           )}
         </div>
         <div className="card">
-          <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Post Types</h2>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>Post Types Distribution</h2>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
+            Breakdown by category: questions, study materials, and announcements
+          </p>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
           ) : (
-            <div ref={pieRef} />
+            <>
+              <div ref={pieRef} />
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-3)', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b', display: 'inline-block' }} /> Questions
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#6366f1', display: 'inline-block' }} /> Study Materials
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#f93a5b', display: 'inline-block' }} /> Announcements
+                </span>
+              </div>
+            </>
           )}
         </div>
       </div>

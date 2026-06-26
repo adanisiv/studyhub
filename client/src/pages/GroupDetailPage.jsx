@@ -40,8 +40,8 @@ function GroupDetailPage({ user }) {
 
   useEffect(() => { loadGroup(); loadPosts(); }, [id]);
 
-  const isAdmin = group?.admin?._id === user._id || group?.admin === user._id;
-  const isMember = group?.members?.some(m => (m._id || m) === user._id);
+  const isAdmin = String(group?.admin?._id || group?.admin) === String(user._id);
+  const isMember = group?.members?.some(m => String(m._id || m) === String(user._id));
 
   const handleApprove = async (userId) => {
     setApproveLoading(userId);

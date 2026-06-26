@@ -153,7 +153,7 @@ function GroupsPage({ user }) {
         /* CSS3: multiple-columns layout */
         <div className="columns-layout">
           {groups.map(group => {
-            const isMember = group.members?.some(m => (m._id || m) === user._id);
+            const isMember = group.members?.some(m => String(m._id || m) === String(user._id));
             return (
               <div key={group._id} className="group-card">
                 <div className="group-card-header">
