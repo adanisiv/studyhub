@@ -24,17 +24,17 @@ function App() {
 
   // RTL support: detect language and set HTML dir attribute
   useEffect(() => {
-    const detect = () => {
-      const userLang = navigator.language || 'en';
+    try {
+      const userLang = navigator?.language || 'en';
       const rtlLangs = ['he', 'ar', 'fa', 'ur'];
       const isRTL = rtlLangs.some(lang => userLang.startsWith(lang));
-      document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-      document.documentElement.lang = userLang;
-    };
-    detect();
-    // Re-detect on language change (if browser language changes)
-    window.addEventListener('languagechange', detect);
-    return () => window.removeEventListener('languagechange', detect);
+      if (document?.documentElement) {
+        document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+        document.documentElement.lang = userLang;
+      }
+    } catch (e) {
+      console.error('RTL detection error:', e);
+    }
   }, []);
 
   useEffect(() => {

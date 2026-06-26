@@ -172,7 +172,7 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
       </div>
 
       {/* Suggested Groups */}
-      {groups.length > 0 && (
+      {groups?.length > 0 && (
         <div className="sidebar-card">
           <div className="sidebar-card-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -201,7 +201,7 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
       )}
 
       {/* Suggested Friends */}
-      {users.length > 0 && (
+      {users?.length > 0 && (
         <div className="sidebar-card">
           <div className="sidebar-card-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
