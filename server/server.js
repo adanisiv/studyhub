@@ -6,6 +6,8 @@ const cors = require('cors');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 
 const app = express();
@@ -14,9 +16,28 @@ const io = new Server(server, {
   cors: { origin: 'http://localhost:3000', methods: ['GET', 'POST'] }
 });
 
+// security headers
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' }
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many login attempts, please try again later' }
+});
+app.use('/api/', apiLimiter);
+app.use('/api/auth', authLimiter);
+
 // middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // multer file upload config

@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/postController');
 const auth = require('../middleware/auth');
+const { createPostRules } = require('../middleware/validate');
 
-router.post('/',               auth, ctrl.create);
+router.post('/',               auth, createPostRules, ctrl.create);
 router.get('/feed',            auth, ctrl.feed);
 router.get('/my',              auth, ctrl.myPosts);
 router.get('/search',          auth, ctrl.search);

@@ -17,4 +17,9 @@ const postSchema = new mongoose.Schema({
   likes:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
+postSchema.index({ group: 1, createdAt: -1 });
+postSchema.index({ author: 1, createdAt: -1 });
+postSchema.index({ tags: 1 });
+postSchema.index({ content: 'text' });
+
 module.exports = mongoose.model('Post', postSchema);

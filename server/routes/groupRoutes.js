@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/groupController');
 const auth = require('../middleware/auth');
+const { createGroupRules } = require('../middleware/validate');
 
-router.post('/',            auth, ctrl.create);
+router.post('/',            auth, createGroupRules, ctrl.create);
 router.get('/',             auth, ctrl.list);
 router.get('/search',       auth, ctrl.search);
 router.get('/:id',          auth, ctrl.getById);

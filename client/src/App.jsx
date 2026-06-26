@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { ToastProvider } from './components/common/Toast';
 import { ConfirmProvider } from './components/common/ConfirmDialog';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import Navbar from './components/common/Navbar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -104,6 +105,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <ToastProvider>
         <ConfirmProvider>
           <div className="app">
@@ -155,6 +157,7 @@ function App() {
           </div>
         </ConfirmProvider>
       </ToastProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

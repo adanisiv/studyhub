@@ -7,15 +7,29 @@ import { useConfirm } from '../components/common/ConfirmDialog';
 
 // ── Achievements definition ──────────────────────────────────────────────────
 
+const AchievementIcon = ({ type }) => {
+  const icons = {
+    first_post: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+    author: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>,
+    prolific: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    first_friend: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>,
+    networker: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+    social_hub: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+    team_player: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>,
+    community: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  };
+  return icons[type] || null;
+};
+
 const ALL_ACHIEVEMENTS = [
-  { id: 'first_post',    icon: '✍️', name: 'First Post',       desc: 'Published your first post',    check: (p, f, g) => p >= 1 },
-  { id: 'author',        icon: '📝', name: 'Author',           desc: 'Published 5+ posts',            check: (p, f, g) => p >= 5 },
-  { id: 'prolific',      icon: '🚀', name: 'Prolific',         desc: 'Published 25+ posts',           check: (p, f, g) => p >= 25 },
-  { id: 'first_friend',  icon: '🤝', name: 'Connected',        desc: 'Made your first friend',        check: (p, f, g) => f >= 1 },
-  { id: 'networker',     icon: '🌐', name: 'Networker',        desc: 'Made 5+ friends',               check: (p, f, g) => f >= 5 },
-  { id: 'social_hub',    icon: '⭐', name: 'Social Hub',       desc: 'Made 15+ friends',              check: (p, f, g) => f >= 15 },
-  { id: 'team_player',   icon: '👥', name: 'Team Player',      desc: 'Joined your first group',       check: (p, f, g) => g >= 1 },
-  { id: 'community',     icon: '🏛️', name: 'Community Builder', desc: 'Joined 5+ groups',            check: (p, f, g) => g >= 5 },
+  { id: 'first_post',    name: 'First Post',        desc: 'Published your first post',    check: (p, f, g) => p >= 1 },
+  { id: 'author',        name: 'Author',            desc: 'Published 5+ posts',            check: (p, f, g) => p >= 5 },
+  { id: 'prolific',      name: 'Prolific',          desc: 'Published 25+ posts',           check: (p, f, g) => p >= 25 },
+  { id: 'first_friend',  name: 'Connected',         desc: 'Made your first friend',        check: (p, f, g) => f >= 1 },
+  { id: 'networker',     name: 'Networker',         desc: 'Made 5+ friends',               check: (p, f, g) => f >= 5 },
+  { id: 'social_hub',    name: 'Social Hub',        desc: 'Made 15+ friends',              check: (p, f, g) => f >= 15 },
+  { id: 'team_player',   name: 'Team Player',       desc: 'Joined your first group',       check: (p, f, g) => g >= 1 },
+  { id: 'community',     name: 'Community Builder',  desc: 'Joined 5+ groups',             check: (p, f, g) => g >= 5 },
 ];
 
 function Achievements({ posts, friends, groups }) {
@@ -31,8 +45,8 @@ function Achievements({ posts, friends, groups }) {
           const earned = a.check(postCount, friendCount, groupCount);
           return (
             <div key={a.id} className={`achievement-badge ${earned ? 'earned' : 'locked'}`} title={a.desc}>
-              {earned && <span className="achievement-checkmark">✓</span>}
-              <span className="achievement-icon">{a.icon}</span>
+              {earned && <span className="achievement-checkmark">&#10003;</span>}
+              <span className="achievement-icon"><AchievementIcon type={a.id} /></span>
               <span className="achievement-name">{a.name}</span>
               <span className="achievement-desc">{a.desc}</span>
             </div>

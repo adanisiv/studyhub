@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema({
   role:       { type: String, enum: ['student', 'admin'], default: 'student' }
 }, { timestamps: true });
 
+userSchema.index({ department: 1, year: 1 });
+userSchema.index({ name: 'text' });
+
 // hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();

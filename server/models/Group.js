@@ -13,4 +13,8 @@ const groupSchema = new mongoose.Schema({
   isPrivate:   { type: Boolean, default: false }
 }, { timestamps: true });
 
+groupSchema.index({ department: 1, year: 1, semester: 1 });
+groupSchema.index({ members: 1 });
+groupSchema.index({ name: 'text', description: 'text' });
+
 module.exports = mongoose.model('Group', groupSchema);
