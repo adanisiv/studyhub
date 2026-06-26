@@ -34,10 +34,7 @@ function PostForm({ groupId, onCreated }) {
     try {
       const formData = new FormData();
       formData.append('media', file);
-      const res = await API.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        baseURL: 'http://localhost:5000/api'
-      });
+      const res = await API.post('/upload', formData);
       setMediaUrl(res.data.url);
       setMediaType(res.data.mediaType);
     } catch (err) {
