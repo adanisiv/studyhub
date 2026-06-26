@@ -293,6 +293,9 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   font-size: 15px;
   font-weight: 700;
+  color: #fff;
+  padding: 4px;
+  flex-shrink: 0;
 }
 
 .nav-links {

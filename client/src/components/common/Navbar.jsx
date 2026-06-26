@@ -53,7 +53,11 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
       <nav className="navbar" role="navigation" aria-label="Main navigation">
         <div className="navbar-inner">
           <Link to="/" className="navbar-brand">
-            <span className="brand-icon" aria-hidden="true">S</span>
+            <svg className="brand-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+              <path d="M12 4v16M4 9h16"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+            </svg>
             StudyHub
           </Link>
 

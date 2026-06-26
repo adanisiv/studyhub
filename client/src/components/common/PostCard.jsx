@@ -12,7 +12,7 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [likes, setLikes] = useState(post.likes?.length || 0);
-  const [liked, setLiked] = useState(post.likes?.includes(currentUserId));
+  const [liked, setLiked] = useState(post.likes?.some(l => (l._id || l) === currentUserId));
   const [actionLoading, setActionLoading] = useState(false);
   const cardRef = useRef(null);
   const toast = useToast();

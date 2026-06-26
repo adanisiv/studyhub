@@ -262,7 +262,7 @@ function FeedPage({ user }) {
     else setLoadingMore(true);
     try {
       const res = await API.get(`/posts/feed?page=${pageNum}&limit=${PAGE_SIZE}`);
-      const { posts: newPosts, pages } = res.data;
+      const { posts: newPosts = [], pages = 1 } = res.data || {};
       setPosts(prev => append ? [...prev, ...newPosts] : newPosts);
       setHasMore(pageNum < pages);
     } catch (err) {
@@ -276,10 +276,10 @@ function FeedPage({ user }) {
     setSidebarLoading(true);
     try {
       const [statsRes, trendingRes, groupsRes, usersRes] = await Promise.all([
-        API.get('/stats/dashboard'),
-        API.get('/stats/trending'),
-        API.get('/groups'),
-        API.get('/users'),
+        API.get('/stats/dashboard').catch(() => ({ data: null })),
+        API.get('/stats/trending').catch(() => ({ data: null })),
+        API.get('/groups').catch(() => ({ data: [] })),
+        API.get('/users').catch(() => ({ data: [] })),
       ]);
 
       setStats(statsRes.data);
@@ -287,12 +287,12 @@ function FeedPage({ user }) {
       setTrending(trendingRes.data);
 
       // Suggested groups: not a member
-      const allGroups = groupsRes.data;
+      const allGroups = Array.isArray(groupsRes.data) ? groupsRes.data : [];
       const nonMember = allGroups.filter(g => !g.members?.some(m => (m._id || m) === user._id));
       setSuggestedGroups(nonMember.slice(0, 3));
 
       // Suggested users: not friends and not self
-      const allUsers = usersRes.data;
+      const allUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
       const friendIds = new Set(user.friends || []);
       const strangers = allUsers.filter(u => u._id !== user._id && !friendIds.has(u._id));
       setSuggestedUsers(strangers.slice(0, 4));

@@ -12,8 +12,9 @@ function StatsPage() {
 
   useEffect(() => {
     API.get('/groups').then(res => {
-      setGroups(res.data);
-      setKpis(prev => ({ ...prev, totalGroups: res.data.length }));
+      const data = Array.isArray(res.data) ? res.data : [];
+      setGroups(data);
+      setKpis(prev => ({ ...prev, totalGroups: data.length }));
     }).catch(console.error);
   }, []);
 
@@ -26,11 +27,11 @@ function StatsPage() {
         API.get('/stats/post-types', { params })
       ]);
 
-      const monthData = monthRes.data;
-      const typeData = typeRes.data;
+      const monthData = monthRes.data || [];
+      const typeData = typeRes.data || [];
 
       const totalPosts = typeData.reduce((s, d) => s + d.count, 0);
-      const topType = typeData.length > 0 ? typeData.reduce((a, b) => a.count > b.count ? a : b).type : '-';
+      const topType = typeData.length > 0 ? typeData.reduce((a, b) => a.count > b.count ? a : b, typeData[0]).type : '-';
       const avgPerMonth = monthData.length > 0 ? Math.round(totalPosts / monthData.length) : 0;
       setKpis(prev => ({ ...prev, totalPosts, topType, avgPerMonth }));
 
