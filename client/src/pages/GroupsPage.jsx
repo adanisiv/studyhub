@@ -95,7 +95,7 @@ function GroupsPage({ user }) {
                 <label htmlFor="cg-year">Year</label>
                 <select id="cg-year" className="form-input" value={form.year}
                   onChange={e => setForm({ ...form, year: Number(e.target.value) })}>
-                  {[1,2,3,4,5,6].map(y => <option key={y} value={y}>{y}</option>)}
+                  {[1,2,3,4].map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
               <div className="form-group">

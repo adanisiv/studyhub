@@ -102,12 +102,12 @@ function PostForm({ groupId, onCreated }) {
 
             {/* Styled file upload area */}
             <div className="file-upload-area">
-              <input type="file" accept="image/*,video/*" onChange={handleFileUpload} aria-label="Upload image or video" />
+              <input type="file" onChange={handleFileUpload} aria-label="Upload file" />
               <div className="file-upload-label">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                 </svg>
-                <span>{uploading ? 'Uploading...' : 'Click to upload image or video'}</span>
+                <span>{uploading ? 'Uploading...' : 'Click to upload file (images, videos, PDF, docs...)'}</span>
               </div>
               {mediaUrl && !uploading && <span className="upload-status success">Uploaded</span>}
             </div>

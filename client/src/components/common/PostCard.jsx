@@ -136,6 +136,15 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
         <img src={post.mediaUrl} alt="Post media" className="post-image" />
       )}
 
+      {/* File attachment */}
+      {post.mediaType === 'file' && post.mediaUrl && (
+        <a href={post.mediaUrl} target="_blank" rel="noopener noreferrer" className="file-preview" style={{ textDecoration: 'none', display: 'flex', marginTop: 'var(--space-3)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          <span>{post.mediaUrl.split('/').pop()}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ marginLeft: 'auto' }}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </a>
+      )}
+
       {/* Tags */}
       {post.tags?.length > 0 && (
         <div className="post-tags">

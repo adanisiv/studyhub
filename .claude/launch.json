@@ -4,8 +4,8 @@
     {
       "name": "studyhub-client",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["start"],
-      "cwd": "client",
+      "runtimeArgs": ["start", "--prefix", "client"],
+      "cwd": ".",
       "port": 3000
     }
   ]

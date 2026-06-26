@@ -221,7 +221,7 @@ function ProfilePage({ currentUser }) {
                   <label htmlFor="pe-year">Year</label>
                   <select id="pe-year" className="form-input" value={editForm.year}
                     onChange={e => setEditForm({ ...editForm, year: Number(e.target.value) })}>
-                    {[1,2,3,4,5,6].map(y => <option key={y} value={y}>{y}</option>)}
+                    {[1,2,3,4].map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 </div>
               </div>

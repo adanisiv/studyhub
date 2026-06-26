@@ -30,14 +30,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|mp4|webm/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowed.test(file.mimetype);
-    if (ext && mime) return cb(null, true);
-    cb(new Error('Only images and videos are allowed'));
-  }
+  limits: { fileSize: 25 * 1024 * 1024 },
 });
 
 // upload endpoint
@@ -45,8 +38,10 @@ const auth = require('./middleware/auth');
 app.post('/api/upload', auth, upload.single('media'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const url = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
-  const mediaType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
-  res.json({ url, filename: req.file.filename, mediaType });
+  let mediaType = 'file';
+  if (req.file.mimetype.startsWith('image/')) mediaType = 'image';
+  else if (req.file.mimetype.startsWith('video/')) mediaType = 'video';
+  res.json({ url, filename: req.file.filename, mediaType, originalName: req.file.originalname });
 });
 
 // routes

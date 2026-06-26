@@ -137,7 +137,7 @@ function SearchPage({ user }) {
               <select id="sg-year" className="form-input" style={{ width: 90 }} value={groupFilters.year}
                 onChange={e => setGroupFilters({ ...groupFilters, year: e.target.value })}>
                 <option value="">Year</option>
-                {[1,2,3,4,5,6].map(y => <option key={y} value={y}>{y}</option>)}
+                {[1,2,3,4].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
               <label htmlFor="sg-sem" className="sr-only">Semester</label>
               <select id="sg-sem" className="form-input" style={{ width: 110 }} value={groupFilters.semester}

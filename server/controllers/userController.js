@@ -94,7 +94,7 @@ exports.addFriend = async (req, res) => {
     if (friendId === req.userId) return res.status(400).json({ error: 'Cannot friend yourself' });
 
     const user = await User.findById(req.userId);
-    if (user.friends.includes(friendId)) {
+    if (user.friends.some(f => f.toString() === friendId)) {
       return res.status(400).json({ error: 'Already friends' });
     }
 

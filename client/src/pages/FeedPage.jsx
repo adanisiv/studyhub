@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
+import { useToast } from '../components/common/Toast';
 
 // ── Skeleton components ──────────────────────────────────────────────────────
 
@@ -237,6 +238,7 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
 const PAGE_SIZE = 15;
 
 function FeedPage({ user }) {
+  const toast = useToast();
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -332,11 +334,12 @@ function FeedPage({ user }) {
   const handleJoin = async (groupId) => {
     setJoinLoading(groupId);
     try {
-      await API.post(`/groups/${groupId}/join`);
+      const res = await API.post(`/groups/${groupId}/join`);
+      toast(res.data.message || 'Joined group', 'success');
       setSuggestedGroups(prev => prev.filter(g => g._id !== groupId));
       setStats(prev => prev ? { ...prev, activeGroups: (prev.activeGroups || 0) + 1 } : prev);
     } catch (err) {
-      console.error(err);
+      toast(err.response?.data?.error || 'Failed to join', 'error');
     }
     setJoinLoading(null);
   };
@@ -345,10 +348,10 @@ function FeedPage({ user }) {
     setFriendLoading(friendId);
     try {
       await API.post(`/users/${user._id}/friend`, { friendId });
+      toast('Friend added!', 'success');
       setSuggestedUsers(prev => prev.filter(u => u._id !== friendId));
-      setStats(prev => prev ? { ...prev, totalUsers: prev.totalUsers } : prev);
     } catch (err) {
-      console.error(err);
+      toast(err.response?.data?.error || 'Failed to add friend', 'error');
     }
     setFriendLoading(null);
   };
