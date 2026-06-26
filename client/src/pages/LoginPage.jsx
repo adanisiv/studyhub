@@ -26,7 +26,11 @@ function LoginPage({ onLogin }) {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="brand-icon" aria-hidden="true">S</span>
+            <svg className="brand-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+              <path d="M12 4v16M4 9h16"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+            </svg>
             StudyHub
           </div>
           <h1 className="auth-title">Welcome back</h1>
