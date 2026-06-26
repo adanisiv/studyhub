@@ -23,10 +23,12 @@ exports.search = async (req, res) => {
   try {
     const filter = {};
     if (req.query.name) {
-      filter.name = { $regex: req.query.name, $options: 'i' };
+      const escaped = req.query.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.name = { $regex: escaped, $options: 'i' };
     }
     if (req.query.department) {
-      filter.department = { $regex: req.query.department, $options: 'i' };
+      const escaped = req.query.department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.department = { $regex: escaped, $options: 'i' };
     }
     if (req.query.year) {
       filter.year = Number(req.query.year);

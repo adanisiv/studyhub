@@ -55,7 +55,7 @@ function ProfilePage({ currentUser }) {
   const canvasRef = useRef(null);
 
   const isOwnProfile = id === currentUser._id;
-  const isFriend = currentUser.friends?.includes(id);
+  const isFriend = currentUser.friends?.some(f => (f._id || f) === id);
 
   const loadProfile = async () => {
     try {

@@ -45,7 +45,8 @@ exports.search = async (req, res) => {
   try {
     const filter = {};
     if (req.query.name) {
-      filter.name = { $regex: req.query.name, $options: 'i' };
+      const escaped = req.query.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.name = { $regex: escaped, $options: 'i' };
     }
     if (req.query.year) {
       filter.year = Number(req.query.year);
@@ -54,7 +55,8 @@ exports.search = async (req, res) => {
       filter.semester = req.query.semester;
     }
     if (req.query.department) {
-      filter.department = { $regex: req.query.department, $options: 'i' };
+      const escaped = req.query.department.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.department = { $regex: escaped, $options: 'i' };
     }
 
     filter.$or = [{ isPrivate: false }, { members: req.userId }];

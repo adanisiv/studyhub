@@ -75,12 +75,10 @@ function SearchPage({ user }) {
             $results.append('<div class="search-result-item" style="color:var(--text-tertiary)">No users found</div>');
           } else {
             data.forEach(function (u) {
-              $results.append(
-                `<div class="search-result-item" data-id="${u._id}">
-                  <strong>${u.name}</strong>
-                  <span style="color:var(--text-tertiary); margin-left:8px">${u.department || 'N/A'} · Year ${u.year}</span>
-                </div>`
-              );
+              var $item = $('<div class="search-result-item"></div>').attr('data-id', u._id);
+              $item.append($('<strong></strong>').text(u.name));
+              $item.append($('<span style="color:var(--text-tertiary); margin-left:8px"></span>').text((u.department || 'N/A') + ' · Year ' + u.year));
+              $results.append($item);
             });
           }
           $results.slideDown(200);
