@@ -25,6 +25,7 @@ function App() {
   const [user, setUser] = useState(null);              // null = not logged in
   const [notifications, setNotifications] = useState([]); // list of notification objects
   const [unreadCount, setUnreadCount] = useState(0);   // badge count for the bell icon
+  const [activity, setActivity] = useState([]);         // recent likes/comments on the user's posts
   // Detects the browser language and sets the HTML dir attribute for RTL languages.
   // This makes Hebrew, Arabic, etc. render correctly right-to-left.
   useEffect(() => {
@@ -62,12 +63,13 @@ function App() {
     // Cleanup: disconnect when user logs out or component unmounts
     return () => { socket.disconnect(); socket = null; };
   }, [user]); // re-run when user changes (login/logout)
-  // Fetches existing notifications + unread count when the user logs in.
+  // Fetches existing notifications + unread count + activity stream when the user logs in.
   // Real-time notifications (above) only deliver NEW ones while online.
   useEffect(() => {
     if (!user) return;
     API.get('/notifications').then(res => setNotifications(res.data)).catch(() => {});
     API.get('/notifications/unread').then(res => setUnreadCount(res.data.count)).catch(() => {});
+    API.get(`/stats/user/${user._id}/activity`).then(res => setActivity(Array.isArray(res.data) ? res.data : [])).catch(() => {});
   }, [user]);
 
   // Mark all notifications as read (called by Navbar when the panel is opened)
@@ -106,6 +108,7 @@ function App() {
     setUser(null);
     setNotifications([]);
     setUnreadCount(0);
+    setActivity([]);
     if (socket) { socket.disconnect(); socket = null; }
   };
   // Redirects unauthenticated users to /login.
@@ -132,6 +135,7 @@ function App() {
                   unreadCount={unreadCount}
                   onMarkAllRead={handleMarkAllRead}
                   onDeleteNotification={handleDeleteNotification}
+                  activity={activity}
                 />
               )}
 

@@ -7,6 +7,7 @@ const { createPostRules } = require('../middleware/validate'); // validates cont
 router.post('/',               auth, createPostRules, ctrl.create);  // POST   /api/posts       — create
 router.get('/feed',            auth, ctrl.feed);                     // GET    /api/posts/feed  — personalized feed
 router.get('/my',              auth, ctrl.myPosts);                  // GET    /api/posts/my    — own posts
+router.get('/user/:userId',    auth, ctrl.byUser);                   // GET    /api/posts/user/:id — posts by any user
 router.get('/search',          auth, ctrl.search);                   // GET    /api/posts/search — advanced search
 router.get('/group/:groupId',  auth, ctrl.byGroup);                  // GET    /api/posts/group/:id — group posts
 router.get('/:id',             auth, ctrl.getById);                  // GET    /api/posts/:id   — single post

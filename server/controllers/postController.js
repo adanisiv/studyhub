@@ -102,6 +102,19 @@ exports.myPosts = async (req, res) => {
   }
 };
 
+exports.byUser = async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.params.userId })
+      .sort({ createdAt: -1 })
+      .populate('author', 'name email avatar')
+      .populate('group', 'name')
+      .populate('comments.author', 'name avatar');
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Used on the Group Detail page. Blocks access to private groups for non-members.
 exports.byGroup = async (req, res) => {
   try {
