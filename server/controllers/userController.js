@@ -31,9 +31,17 @@ exports.search = async (req, res) => {
     const filter = {};
 
     if (req.query.name) {
-      // Escape special regex characters to prevent ReDoS (denial of service via regex)
-      const escaped = req.query.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.name = { $regex: escaped, $options: 'i' }; // case-insensitive match
+      const raw = req.query.name.trim();
+      // Build a fuzzy subsequence pattern: each character in the query may have
+      // any characters between it and the next one.
+      // e.g. "dn"  → /d.*n/i  — matches "Dan", "Dean", "Donald"
+      //      "siv" → /s.*i.*v/i — matches "Sivan", "Silvio"
+      // Each character is escaped individually before joining so special chars are safe.
+      const fuzzyPattern = raw
+        .split('')
+        .map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*');
+      filter.name = { $regex: fuzzyPattern, $options: 'i' };
     }
 
     if (req.query.department) {
@@ -42,7 +50,7 @@ exports.search = async (req, res) => {
     }
 
     if (req.query.year) {
-      filter.year = Number(req.query.year); // exact match for year (1, 2, 3, or 4)
+      filter.year = Number(req.query.year);
     }
 
     // Always exclude the logged-in user from search results

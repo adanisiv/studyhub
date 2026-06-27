@@ -101,6 +101,16 @@ function App() {
     setUser(userData);
   };
 
+  // updateUser — called by ProfilePage after the user saves their own profile
+  // (e.g. new name or avatar) so the Navbar reflects the change immediately
+  const updateUser = (patch) => {
+    setUser(prev => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   // logout — clears all auth state and disconnects socket
   const logout = () => {
     localStorage.removeItem('user');
@@ -164,7 +174,7 @@ function App() {
                   <Protected><div className="main"><SearchPage user={user} /></div></Protected>
                 } />
                 <Route path="/profile/:id" element={
-                  <Protected><div className="main"><ProfilePage currentUser={user} /></div></Protected>
+                  <Protected><div className="main"><ProfilePage currentUser={user} onUserUpdate={updateUser} /></div></Protected>
                 } />
                 {/* Chat has its own full-page layout (no .main wrapper) */}
                 <Route path="/chat" element={

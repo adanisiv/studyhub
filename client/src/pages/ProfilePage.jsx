@@ -55,7 +55,7 @@ function Achievements({ posts, friends, groups }) {
   );
 }
 
-function ProfilePage({ currentUser }) {
+function ProfilePage({ currentUser, onUserUpdate }) {
   const { id } = useParams();
   const toast = useToast();
   const confirm = useConfirm();
@@ -68,6 +68,8 @@ function ProfilePage({ currentUser }) {
   const [userStats, setUserStats] = useState(null);
 
   const canvasRef = useRef(null);
+  const avatarInputRef = useRef(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const isOwnProfile = id === currentUser._id;
   const isFriend = profile?.friends?.some(f => String(f._id || f) === String(currentUser._id));
@@ -76,7 +78,7 @@ function ProfilePage({ currentUser }) {
     try {
       const res = await API.get(`/users/${id}`);
       setProfile(res.data);
-      setEditForm({ name: res.data.name, department: res.data.department, year: res.data.year });
+      setEditForm({ name: res.data.name, department: res.data.department, year: res.data.year, avatar: res.data.avatar || '' });
     } catch (err) {
       console.error(err);
     }
@@ -113,6 +115,22 @@ function ProfilePage({ currentUser }) {
   };
 
   useEffect(() => { loadProfile(); loadPosts(); loadGroups(); loadUserStats(); }, [id]);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const form = new FormData();
+      form.append('media', file);
+      const res = await API.post('/upload', form);
+      setEditForm(prev => ({ ...prev, avatar: res.data.url }));
+      toast('Photo uploaded', 'success');
+    } catch (err) {
+      toast('Upload failed', 'error');
+    }
+    setAvatarUploading(false);
+  };
 
   // Draws a gradient banner with the user's name/initial using HTML5 Canvas API
   useEffect(() => {
@@ -171,10 +189,14 @@ function ProfilePage({ currentUser }) {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await API.put(`/users/${id}`, editForm);
+      const res = await API.put(`/users/${id}`, editForm);
       setEditing(false);
       toast('Profile updated', 'success');
       loadProfile();
+      // Sync the Navbar/App state so avatar and name change instantly
+      if (isOwnProfile && onUserUpdate) {
+        onUserUpdate({ name: editForm.name, avatar: editForm.avatar || '' });
+      }
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
     }
@@ -232,6 +254,52 @@ function ProfilePage({ currentUser }) {
         <div className="profile-info">
           {editing ? (
             <form onSubmit={handleUpdate}>
+              {/* Avatar upload section */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                {/* Preview: show uploaded photo or initial */}
+                <div style={{
+                  width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #1a1a3e, #e94560)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 28, fontWeight: 700, color: '#fff', border: '2px solid var(--border-light)',
+                }}>
+                  {editForm.avatar
+                    ? <img src={editForm.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : profile.name?.charAt(0)?.toUpperCase()
+                  }
+                </div>
+                <div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                    Profile Photo
+                  </div>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleAvatarChange}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-small"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                  >
+                    {avatarUploading ? 'Uploading…' : 'Upload Photo'}
+                  </button>
+                  {editForm.avatar && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-small"
+                      style={{ marginLeft: 8, color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}
+                      onClick={() => setEditForm(prev => ({ ...prev, avatar: '' }))}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="pe-name">Name</label>
                 <input id="pe-name" className="form-input" value={editForm.name}
@@ -259,11 +327,25 @@ function ProfilePage({ currentUser }) {
           ) : (
             <>
               <div className="flex-between">
-                <div>
-                  <h2 className="profile-name">{profile.name}</h2>
-                  <p className="profile-detail">
-                    {profile.email} · {profile.department || 'No department'} · Year {profile.year}
-                  </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  {/* Avatar: photo if set, otherwise letter initial */}
+                  <div style={{
+                    width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                    background: 'linear-gradient(135deg, #1a1a3e, #e94560)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22, fontWeight: 700, color: '#fff', border: '2px solid var(--border-light)',
+                  }}>
+                    {profile.avatar
+                      ? <img src={profile.avatar} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : profile.name?.charAt(0)?.toUpperCase()
+                    }
+                  </div>
+                  <div>
+                    <h2 className="profile-name">{profile.name}</h2>
+                    <p className="profile-detail">
+                      {profile.email} · {profile.department || 'No department'} · Year {profile.year}
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="profile-actions">

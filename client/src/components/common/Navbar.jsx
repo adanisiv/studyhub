@@ -96,7 +96,12 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               Stats
             </Link>
             <Link to={`/profile/${user._id}`} className="nav-user-btn" aria-label={`Profile for ${user.name}`}>
-              <span className="nav-user-avatar" aria-hidden="true">{initial}</span>
+              <span className="nav-user-avatar" aria-hidden="true" style={{ overflow: 'hidden', padding: 0 }}>
+                {user.avatar
+                  ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  : initial
+                }
+              </span>
               {user.name?.split(' ')[0]}
               {user.role === 'admin' && <span className="admin-badge">Admin</span>}
             </Link>
