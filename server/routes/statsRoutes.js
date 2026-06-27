@@ -7,6 +7,7 @@ router.get('/trending',        auth, ctrl.trending);       // GET /api/stats/tre
 router.get('/posts-per-month', auth, ctrl.postsPerMonth);  // GET /api/stats/posts-per-month — data for bar chart
 router.get('/post-types',      auth, ctrl.postTypes);      // GET /api/stats/post-types      — data for pie chart
 router.get('/daily-activity',  auth, ctrl.dailyActivity);  // GET /api/stats/daily-activity  — data for line chart
-router.get('/user/:userId',    auth, ctrl.userStats);      // GET /api/stats/user/:userId    — personal stats
+router.get('/user/:userId',          auth, ctrl.userStats);    // GET /api/stats/user/:userId           — personal stats
+router.get('/user/:userId/activity', auth, ctrl.userActivity); // GET /api/stats/user/:userId/activity — recent likes/comments
 
 module.exports = router;

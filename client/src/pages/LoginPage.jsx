@@ -1,25 +1,23 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');    // error message from the server
-  const [loading, setLoading] = useState(false); // disables the button while the request is pending
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // prevent default browser form submission (page reload)
+    e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      // POST /api/auth/login — returns { user, token }
       const res = await API.post('/auth/login', { email, password });
-      // Pass both to App.jsx which stores them and updates the auth state
       onLogin(res.data.user, res.data.token);
     } catch (err) {
-      // err.response?.data?.error is the message from our Express error handler
-      // The fallback covers network errors (server down, etc.)
       setError(err.response?.data?.error || 'Login failed');
     }
     setLoading(false);
@@ -28,7 +26,6 @@ function LoginPage({ onLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-container">
-        {/* Branding header */}
         <div className="auth-header">
           <div className="auth-logo">
             <svg className="brand-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -38,15 +35,14 @@ function LoginPage({ onLogin }) {
             </svg>
             StudyHub
           </div>
-          <h1 className="auth-title">Welcome back</h1>
-          <p className="auth-subtitle">Sign in to continue to your study network</p>
+          <h1 className="auth-title">{t('welcomeBack')}</h1>
+          <p className="auth-subtitle">{t('loginSubtitle')}</p>
         </div>
 
-        {/* Login form card */}
         <div className="auth-card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="login-email">Email address</label>
+              <label htmlFor="login-email">{t('emailAddress')}</label>
               <input
                 id="login-email"
                 className="form-input"
@@ -59,35 +55,33 @@ function LoginPage({ onLogin }) {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="login-password">Password</label>
+              <label htmlFor="login-password">{t('password')}</label>
               <input
                 id="login-password"
                 className="form-input"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t('enterPassword')}
                 required
                 autoComplete="current-password"
               />
             </div>
 
-            {/* Error message — role="alert" makes screen readers announce it immediately */}
             {error && <p className="error-text" role="alert">{error}</p>}
 
-            {/* Submit button — shows spinner while loading, disabled to prevent double-submit */}
             <button
               className="btn btn-primary"
               style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }}
               disabled={loading}
             >
-              {loading ? <><span className="btn-spinner" /> Signing in...</> : 'Sign in'}
+              {loading ? <><span className="btn-spinner" /> {t('signingIn')}</> : t('signIn')}
             </button>
           </form>
         </div>
 
         <div className="auth-footer">
-          Don't have an account? <Link to="/register">Create one</Link>
+          {t('noAccount')} <Link to="/register">{t('createOne')}</Link>
         </div>
       </div>
     </div>

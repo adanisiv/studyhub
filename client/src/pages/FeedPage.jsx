@@ -4,6 +4,7 @@ import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
 import { useToast } from '../components/common/Toast';
+import { useLanguage } from '../contexts/LanguageContext';
 // Skeletons are placeholder elements with an animated shimmer.
 // They show while content loads, preventing layout shifts and giving visual feedback.
 
@@ -60,11 +61,11 @@ function SkeletonSidebar() {
 // posts this week, and new members. Data comes from GET /api/stats/dashboard.
 
 function DashboardCards({ stats, loading }) {
-  // Define the 4 cards with their labels, values, and icons
+  const { t } = useLanguage();
   const cards = [
     {
-      label: 'Total Users',
-      value: stats?.totalUsers ?? '–', // '–' while loading or if server returns null
+      label: t('totalUsers'),
+      value: stats?.totalUsers ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -73,7 +74,7 @@ function DashboardCards({ stats, loading }) {
       ),
     },
     {
-      label: 'Active Groups',
+      label: t('activeGroups'),
       value: stats?.activeGroups ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -83,7 +84,7 @@ function DashboardCards({ stats, loading }) {
       ),
     },
     {
-      label: 'Posts This Week',
+      label: t('postsThisWeek'),
       value: stats?.postsThisWeek ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -92,7 +93,7 @@ function DashboardCards({ stats, loading }) {
       ),
     },
     {
-      label: 'New Members',
+      label: t('newMembers'),
       value: stats?.newMembers ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -130,50 +131,47 @@ function DashboardCards({ stats, loading }) {
 //   • People You May Know — users who are not yet friends (add button)
 
 function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAddFriend, friendLoading }) {
+  const { t } = useLanguage();
   return (
     <aside className="feed-sidebar" aria-label="Sidebar">
 
-      {/* Trending Tags */}
       <div className="sidebar-card">
         <div className="sidebar-card-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
           </svg>
-          Trending Tags
+          {t('trendingTags')}
         </div>
         {trending?.tags?.length > 0 ? (
           <div className="trending-tags">
-            {trending.tags.map(t => (
+            {trending.tags.map(tag => (
               <Link
-                key={t.tag}
-                to={`/tag/${encodeURIComponent(t.tag)}`}
+                key={tag.tag}
+                to={`/tag/${encodeURIComponent(tag.tag)}`}
                 className="trending-tag"
-                title={`See everything tagged #${t.tag}`}
+                title={`#${tag.tag}`}
               >
-                #{t.tag}
-                {/* Post count badge next to each tag */}
-                <span className="trending-tag-count">{t.count}</span>
+                #{tag.tag}
+                <span className="trending-tag-count">{tag.count}</span>
               </Link>
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>No trending tags yet</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('noTrendingTags')}</p>
         )}
       </div>
 
-      {/* Popular Groups — ranked list with member counts */}
       <div className="sidebar-card">
         <div className="sidebar-card-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
           </svg>
-          Popular Groups
+          {t('popularGroups')}
         </div>
         {trending?.groups?.length > 0 ? (
           <div>
             {trending.groups.map((g, i) => (
               <Link key={g._id} to={`/groups/${g._id}`} className="trending-group-item">
-                {/* Rank number (1, 2, 3…) */}
                 <span className="trending-group-rank">{i + 1}</span>
                 <span className="trending-group-name">{g.name}</span>
                 <span className="trending-group-members">
@@ -186,65 +184,60 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>No groups yet</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('noGroupsYet')}</p>
         )}
       </div>
 
-      {/* Suggested Groups — only shown if there are groups the user hasn't joined */}
       {groups?.length > 0 && (
         <div className="sidebar-card">
           <div className="sidebar-card-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
             </svg>
-            Suggested Groups
+            {t('suggestedGroups')}
           </div>
           {groups.map(g => (
             <div key={g._id} className="suggested-item">
-              {/* Letter avatar (first letter of group name) */}
               <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>{g.name?.charAt(0)}</div>
               <div className="suggested-item-info">
                 <Link to={`/groups/${g._id}`} className="suggested-item-name">{g.name}</Link>
-                <div className="suggested-item-meta">{g.members?.length || 0} members</div>
+                <div className="suggested-item-meta">{g.members?.length || 0} {t('members')}</div>
               </div>
-              {/* Join button — shows spinner while the join request is pending */}
               <button
                 className="btn btn-outline btn-small"
                 style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
                 onClick={() => onJoin(g._id)}
                 disabled={joinLoading === g._id}
               >
-                {joinLoading === g._id ? <span className="btn-spinner" /> : 'Join'}
+                {joinLoading === g._id ? <span className="btn-spinner" /> : t('join')}
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* People You May Know — users who are not yet friends */}
       {users?.length > 0 && (
         <div className="sidebar-card">
           <div className="sidebar-card-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>
             </svg>
-            People You May Know
+            {t('suggestedFriends')}
           </div>
           {users.map(u => (
             <div key={u._id} className="suggested-item">
               <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>{u.name?.charAt(0)}</div>
               <div className="suggested-item-info">
                 <Link to={`/profile/${u._id}`} className="suggested-item-name">{u.name}</Link>
-                <div className="suggested-item-meta">{u.department || 'Student'} · Year {u.year}</div>
+                <div className="suggested-item-meta">{u.department || t('studentLabel')} · {t('year')} {u.year}</div>
               </div>
-              {/* Add Friend button — shows spinner while request is pending */}
               <button
                 className="btn btn-primary btn-small"
                 style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
                 onClick={() => onAddFriend(u._id)}
                 disabled={friendLoading === u._id}
               >
-                {friendLoading === u._id ? <span className="btn-spinner" /> : '+ Add'}
+                {friendLoading === u._id ? <span className="btn-spinner" /> : `+ ${t('addFriend')}`}
               </button>
             </div>
           ))}
@@ -259,6 +252,7 @@ const PAGE_SIZE = 15;
 
 function FeedPage({ user }) {
   const toast = useToast();
+  const { t } = useLanguage();
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);          // current page number
   const [hasMore, setHasMore] = useState(true); // false when we've loaded all pages
@@ -420,11 +414,11 @@ function FeedPage({ user }) {
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                 </svg>
               </div>
-              <div className="empty-state-title">Your feed is empty</div>
-              <div className="empty-state-text">Join groups or add friends to see posts here.</div>
+              <div className="empty-state-title">{t('feedEmpty')}</div>
+              <div className="empty-state-text">{t('feedEmptyDesc')}</div>
               <div className="empty-state-actions">
-                <Link to="/groups" className="btn btn-primary btn-small">Browse Groups</Link>
-                <Link to="/search" className="btn btn-outline btn-small">Find People</Link>
+                <Link to="/groups" className="btn btn-primary btn-small">{t('browseGroups')}</Link>
+                <Link to="/search" className="btn btn-outline btn-small">{t('findPeople')}</Link>
               </div>
             </div>
           ) : (
@@ -448,14 +442,13 @@ function FeedPage({ user }) {
               {loadingMore && (
                 <div className="load-more-spinner">
                   <span className="btn-spinner" />
-                  Loading more...
+                  {t('loadingMore')}
                 </div>
               )}
 
-              {/* End-of-feed message when all pages have been loaded */}
               {!hasMore && posts.length > 0 && (
                 <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
-                  You've seen all posts
+                  {t('seenAllPosts')}
                 </div>
               )}
             </>

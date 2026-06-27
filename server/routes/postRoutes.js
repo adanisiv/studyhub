@@ -18,5 +18,6 @@ router.delete('/:id',          auth, ctrl.remove);                   // DELETE /
 router.post('/:id/comment',                      auth, ctrl.addComment);     // add comment
 router.delete('/:postId/comment/:commentId',     auth, ctrl.deleteComment);  // delete comment
 router.post('/:id/like',                         auth, ctrl.toggleLike);     // toggle like
+router.get('/:id/likes',                         auth, ctrl.getLikes);        // who liked this post
 
 module.exports = router;

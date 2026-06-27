@@ -1,8 +1,10 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../../api/axios';
 import { useToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
+import { useLanguage } from '../../contexts/LanguageContext';
+import EmojiPicker from './EmojiPicker';
 
 // Pre-defined color classes for the avatar background.
 // The color is picked based on the first character of the author's name,
@@ -21,10 +23,52 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
   const [liked, setLiked] = useState(
     post.likes?.some(l => String(l?._id || l) === String(currentUserId)) || false
   );
-  const [actionLoading, setActionLoading] = useState(false); // for the delete button spinner
-  const cardRef = useRef(null); // ref to the <article> DOM element (needed for jQuery)
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showCommentEmoji, setShowCommentEmoji] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [likersList, setLikersList] = useState([]);
+  const [likersLoading, setLikersLoading] = useState(false);
+  const cardRef = useRef(null);
+  const commentInputRef = useRef(null);
+  const modalRef = useRef(null);
   const toast = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
+  const typeLabels = { question: t('postQuestion'), material: t('postMaterial'), announcement: t('postAnnouncement') };
+
+  const handleShowLikes = useCallback(async () => {
+    if (likes === 0) return;
+    setShowLikesModal(true);
+    setLikersLoading(true);
+    try {
+      const res = await API.get(`/posts/${post._id}/likes`);
+      setLikersList(res.data || []);
+    } catch (err) {
+      toast(t('errLoadLikes'), 'error');
+      setShowLikesModal(false);
+    }
+    setLikersLoading(false);
+  }, [post._id, likes, toast, t]);
+
+  useEffect(() => {
+    if (!showLikesModal) return;
+    const onKey = (e) => { if (e.key === 'Escape') setShowLikesModal(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showLikesModal]);
+
+  const handleCommentEmoji = (emoji) => {
+    const input = commentInputRef.current;
+    if (!input) { setCommentText(prev => prev + emoji); return; }
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const next = commentText.slice(0, start) + emoji + commentText.slice(end);
+    setCommentText(next);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
+  };
 
   // Is the current user the author of this post? Wrap in String() for safety.
   const isAuthor = String(post.author?._id) === String(currentUserId);
@@ -123,8 +167,7 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
             )}
           </div>
         </div>
-        {/* Post type badge: "question", "material", or "announcement" */}
-        <span className={`post-type-badge ${post.type}`}>{post.type}</span>
+        <span className={`post-type-badge ${post.type}`}>{typeLabels[post.type] || post.type}</span>
       </div>
 
       {/* ── Post content ──────────────────────────────────────────────── */}
@@ -134,8 +177,8 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
           <label htmlFor={`edit-${post._id}`} className="sr-only">Edit post content</label>
           <textarea id={`edit-${post._id}`} className="form-input" value={editContent} onChange={e => setEditContent(e.target.value)} />
           <div className="flex gap-2 mt-10">
-            <button className="btn btn-primary btn-small" onClick={handleUpdate}>Save</button>
-            <button className="btn btn-secondary btn-small" onClick={() => setEditing(false)}>Cancel</button>
+            <button className="btn btn-primary btn-small" onClick={handleUpdate}>{t('save')}</button>
+            <button className="btn btn-secondary btn-small" onClick={() => setEditing(false)}>{t('cancel')}</button>
           </div>
         </div>
       ) : (
@@ -190,11 +233,19 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
 
       {/* ── Action bar ───────────────────────────────────────────────── */}
       <div className="post-actions">
-        {/* Like button: filled heart when liked, outline heart when not */}
+        {/* Like button: heart toggles like; count opens "who liked" modal */}
         <button className={`post-action-btn ${liked ? 'liked' : ''}`} onClick={handleLike} aria-label={liked ? 'Unlike post' : 'Like post'}>
           <svg viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
+        </button>
+        <button
+          className="post-action-btn"
+          onClick={handleShowLikes}
+          disabled={likes === 0}
+          aria-label={`${likes} likes — click to see who liked this`}
+          style={{ paddingLeft: 2, marginLeft: -6, cursor: likes === 0 ? 'default' : 'pointer', opacity: likes === 0 ? 0.5 : 1 }}
+        >
           {likes}
         </button>
 
@@ -213,7 +264,7 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            Edit
+            {t('edit')}
           </button>
         )}
 
@@ -238,7 +289,7 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
         <div className="comments-section">
           {post.comments?.length === 0 && (
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', padding: 'var(--space-2) 0' }}>
-              No comments yet. Be the first!
+              {t('noCommentsYet')}
             </p>
           )}
 
@@ -269,12 +320,95 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
           {/* New comment form */}
           <form onSubmit={handleComment} className="comment-form">
             <label htmlFor={`comment-${post._id}`} className="sr-only">Write a comment</label>
-            <input id={`comment-${post._id}`} className="form-input" placeholder="Write a comment..."
-              value={commentText} onChange={e => setCommentText(e.target.value)} />
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input
+                ref={commentInputRef}
+                id={`comment-${post._id}`}
+                className="form-input"
+                placeholder={t('addComment')}
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                style={{ paddingRight: 34 }}
+              />
+              <button
+                type="button"
+                data-emoji-toggle
+                onClick={() => setShowCommentEmoji(v => !v)}
+                aria-label="Insert emoji"
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 2, opacity: 0.7 }}
+              >
+                😊
+              </button>
+              {showCommentEmoji && (
+                <EmojiPicker
+                  onSelect={(emoji) => { handleCommentEmoji(emoji); }}
+                  onClose={() => setShowCommentEmoji(false)}
+                />
+              )}
+            </div>
             <button className="btn btn-primary btn-small" type="submit" aria-label="Send comment">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </button>
           </form>
+        </div>
+      )}
+      {showLikesModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('likesModalTitle') || 'People who liked this post'}
+          onClick={() => setShowLikesModal(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)' }}
+        >
+          <div
+            ref={modalRef}
+            tabIndex={-1}
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', width: '100%', maxWidth: 360, maxHeight: '70vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4) var(--space-5)', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--danger, #f93a5b)" stroke="none" aria-hidden="true">
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                </svg>
+                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                  {likes} {likes === 1 ? t('likesSingular') : t('likesPlural')}
+                </span>
+              </div>
+              <button onClick={() => setShowLikesModal(false)} aria-label="Close likes list" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4, borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: 'var(--space-3) var(--space-5)' }}>
+              {likersLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border)' }}>
+                    <div className="skeleton" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }} />
+                    <div className="skeleton" style={{ height: 14, width: '55%', borderRadius: 'var(--radius-sm)' }} />
+                  </div>
+                ))
+              ) : likersList.length === 0 ? (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', textAlign: 'center', padding: 'var(--space-6) 0' }}>
+                  {t('noLikesYet')}
+                </p>
+              ) : (
+                likersList.map((user) => {
+                  const uInitial = user.name?.charAt(0)?.toUpperCase() || '?';
+                  const uColorIdx = user.name ? user.name.charCodeAt(0) % AVATAR_COLORS.length : 0;
+                  return (
+                    <div key={user._id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border)' }}>
+                      <div className={`avatar ${AVATAR_COLORS[uColorIdx]}`} style={{ width: 36, height: 36, fontSize: 15, flexShrink: 0 }} aria-hidden="true">
+                        {uInitial}
+                      </div>
+                      <Link to={`/profile/${user._id}`} onClick={() => setShowLikesModal(false)} style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)', textDecoration: 'none' }}>
+                        {user.name}
+                      </Link>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       )}
     </article>

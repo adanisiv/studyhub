@@ -303,6 +303,18 @@ exports.deleteComment = async (req, res) => {
   }
 };
 
+// Returns the list of users who liked a post (name + _id only).
+exports.getLikes = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('likes', 'name _id');
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json(post.likes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Calling this endpoint toggles: like if not liked, unlike if already liked.
 // We use .some() with .toString() because req.userId is a string but post.likes
 // contains Mongoose ObjectIds — direct indexOf/=== comparison always fails.

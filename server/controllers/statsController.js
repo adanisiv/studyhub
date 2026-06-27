@@ -128,13 +128,58 @@ exports.postTypes = async (req, res) => {
   }
 };
 
-// Returns aggregated stats for a single user:
-//   • totalPosts: posts they've authored
-//   • likesReceived: total likes across all their posts
-//   • commentsReceived: total comments across all their posts
-//   • postsByType: { question, material, announcement } counts for their pie chart
-//
-// Used to enrich the user profile page with at-a-glance numbers.
+// Returns a flat activity stream of the most recent likes + comments OTHER users
+// left on this user's posts. Each entry has type, user, postPreview, and when.
+exports.userActivity = async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const userIdStr = String(req.params.userId);
+
+    const posts = await Post.find({ author: req.params.userId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .populate('likes', 'name avatar')
+      .populate('comments.author', 'name avatar')
+      .select('content likes comments createdAt');
+
+    const activity = [];
+    posts.forEach(p => {
+      (p.likes || []).forEach(liker => {
+        if (!liker) return;
+        const actorId = String(liker._id || liker);
+        if (actorId === userIdStr) return; // skip self-likes
+        activity.push({
+          type: 'like',
+          user: { _id: liker._id, name: liker.name, avatar: liker.avatar },
+          postId: p._id,
+          postPreview: (p.content || '').slice(0, 80),
+          when: p.createdAt
+        });
+      });
+      (p.comments || []).forEach(c => {
+        if (!c.author) return;
+        const actorId = String(c.author._id || c.author);
+        if (actorId === userIdStr) return; // skip self-comments
+        activity.push({
+          type: 'comment',
+          user: { _id: c.author._id, name: c.author.name, avatar: c.author.avatar },
+          postId: p._id,
+          postPreview: (p.content || '').slice(0, 80),
+          text: c.text,
+          when: c.createdAt
+        });
+      });
+    });
+
+    activity.sort((a, b) => new Date(b.when) - new Date(a.when));
+    res.json(activity.slice(0, 20));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Returns totalPosts, likesReceived, commentsReceived, and postsByType for the
+// KPI tiles shown on the profile page.
 exports.userStats = async (req, res) => {
   try {
     const mongoose = require('mongoose');

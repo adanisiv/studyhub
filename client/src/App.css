@@ -2238,6 +2238,16 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   border-color: var(--accent-200);
   box-shadow: var(--shadow-xs);
 }
+[data-theme="dark"] .achievement-badge.earned {
+  background: linear-gradient(135deg, rgba(249,58,91,0.15) 0%, rgba(249,58,91,0.05) 100%);
+  border-color: rgba(249,58,91,0.4);
+}
+[data-theme="dark"] .achievement-badge.earned .achievement-name {
+  color: #fff;
+}
+[data-theme="dark"] .achievement-badge.earned .achievement-desc {
+  color: rgba(255,255,255,0.7);
+}
 .achievement-badge.locked {
   background: var(--bg-secondary);
   border-color: var(--border-light);
@@ -2254,6 +2264,10 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   border-radius: 50%;
   background: var(--accent-50);
   color: var(--accent);
+}
+[data-theme="dark"] .achievement-icon {
+  background: rgba(249,58,91,0.2);
+  color: #ff6b87;
 }
 .achievement-badge.locked .achievement-icon {
   background: var(--bg-tertiary);

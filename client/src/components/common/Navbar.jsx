@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const TYPE_ICON = {
   like: '❤️',
@@ -11,6 +12,7 @@ const TYPE_ICON = {
 
 function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onDeleteNotification, activity }) {
   const location = useLocation();
+  const { t, lang, setLang } = useLanguage();
   const isActive = (path) => location.pathname === path ? 'nav-link active' : 'nav-link';
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -81,19 +83,19 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
           <div className={`nav-links ${menuOpen ? 'open' : ''}`} role="menubar">
             <Link to="/" className={isActive('/')} role="menuitem">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-              Feed
+              {t('feed')}
             </Link>
             <Link to="/groups" className={isActive('/groups')} role="menuitem">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-              Groups
+              {t('groups')}
             </Link>
             <Link to="/search" className={isActive('/search')} role="menuitem">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              Search
+              {t('search')}
             </Link>
             <Link to="/stats" className={isActive('/stats')} role="menuitem">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-              Stats
+              {t('stats')}
             </Link>
             <Link to={`/profile/${user._id}`} className="nav-user-btn" aria-label={`Profile for ${user.name}`}>
               <span className="nav-user-avatar" aria-hidden="true" style={{ overflow: 'hidden', padding: 0 }}>
@@ -103,7 +105,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                 }
               </span>
               {user.name?.split(' ')[0]}
-              {user.role === 'admin' && <span className="admin-badge">Admin</span>}
+              {user.role === 'admin' && <span className="admin-badge">{t('admin')}</span>}
             </Link>
           </div>
 
@@ -129,9 +131,20 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               )}
             </button>
 
+            {/* Language toggle: IL flag for Hebrew, EN for English */}
+            <button
+              className="btn btn-small btn-ghost"
+              onClick={() => setLang(lang === 'he' ? 'en' : 'he')}
+              style={{ color: 'rgba(255,255,255,0.6)', fontSize: 'var(--text-xs)', minWidth: 36 }}
+              aria-label="Toggle language"
+              title={lang === 'he' ? 'Switch to English' : 'עבור לעברית'}
+            >
+              {lang === 'he' ? 'EN' : 'עב'}
+            </button>
+
             <button className="btn btn-small btn-ghost" onClick={onLogout} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--text-xs)' }} aria-label="Log out">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-              Logout
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -153,7 +166,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
         {/* Header */}
         <div className="notif-center-header">
           <span className="notif-center-title">
-            {notifTab === 'notifications' ? 'Notifications' : 'Activity'}
+            {notifTab === 'notifications' ? t('notifications') : t('activity')}
             {notifTab === 'notifications' && unreadCount > 0 && (
               <span className="notification-badge" style={{ marginLeft: 8, position: 'static', display: 'inline-flex' }}>
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -187,7 +200,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               marginBottom: -1,
             }}
           >
-            Notifications
+            {t('notifications')}
           </button>
           <button
             onClick={() => setNotifTab('activity')}
@@ -205,7 +218,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               marginBottom: -1,
             }}
           >
-            Activity
+            {t('activity')}
             {activity.length > 0 && (
               <span style={{
                 marginLeft: 6,
@@ -233,8 +246,8 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                     <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
                   </svg>
                 </div>
-                <div className="empty-state-title">All caught up!</div>
-                <div className="empty-state-text">No notifications yet.</div>
+                <div className="empty-state-title">{t('allCaughtUp')}</div>
+                <div className="empty-state-text">{t('noNotificationsYet')}</div>
               </div>
             ) : (
               notifications.map(n => (
@@ -269,8 +282,8 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                     <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                   </svg>
                 </div>
-                <div className="empty-state-title">No activity yet</div>
-                <div className="empty-state-text">When people like or comment on your posts it will appear here.</div>
+                <div className="empty-state-title">{t('noActivityYet')}</div>
+                <div className="empty-state-text">{t('activityDesc')}</div>
               </div>
             ) : (
               activity.map((a, i) => (
@@ -300,7 +313,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                       >
                         {a.user.name}
                       </Link>
-                      {' '}{a.type === 'like' ? 'liked your post' : 'commented on your post'}
+                      {' '}{a.type === 'like' ? t('likedYourPost') : t('commentedOnYourPost')}
                       {a.type === 'comment' && a.text && (
                         <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
                           {' '}— "{a.text.length > 60 ? a.text.slice(0, 60) + '…' : a.text}"
@@ -324,7 +337,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
         {notifTab === 'notifications' && unreadCount > 0 && (
           <div className="notif-center-footer">
             <button className="btn btn-outline" style={{ width: '100%' }} onClick={onMarkAllRead}>
-              Mark all as read
+              {t('markAllRead')}
             </button>
           </div>
         )}

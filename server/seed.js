@@ -493,6 +493,50 @@ const seed = async () => {
   }
   console.log('Created chat messages');
 
+  // Generate realistic notifications for the most active users so the bell icon
+  // shows recent activity right after login. Each notification points back to
+  // the post that triggered it.
+  const notifications = [];
+  // Helper to add a notification with a relative-time createdAt
+  const makeNotif = (recipient, sender, type, message, postId, group, hoursAgo) => {
+    notifications.push({
+      recipient: recipient._id,
+      sender: sender._id,
+      type,
+      message,
+      post: postId || null,
+      group: group?._id || null,
+      read: hoursAgo > 24, // older than a day = already read
+      createdAt: new Date(Date.now() - hoursAgo * 60 * 60 * 1000),
+    });
+  };
+
+  // Build notifications from the latest posts: each post's likes and comments
+  // become notifications targeting the post author.
+  const recentPosts = await Post.find({}).sort({ createdAt: -1 }).limit(40).populate('author', 'name');
+  recentPosts.forEach((post, idx) => {
+    (post.likes || []).slice(0, 3).forEach((likerId, lIdx) => {
+      if (String(likerId) === String(post.author._id)) return;
+      const liker = users.find(u => String(u._id) === String(likerId));
+      if (liker) makeNotif(post.author, liker, 'like', `${liker.name} liked your post`, post._id, post.group, idx + lIdx);
+    });
+    (post.comments || []).slice(0, 2).forEach((c, cIdx) => {
+      if (String(c.author) === String(post.author._id)) return;
+      const commenter = users.find(u => String(u._id) === String(c.author));
+      if (commenter) makeNotif(post.author, commenter, 'comment', `${commenter.name} commented on your post`, post._id, post.group, idx + cIdx + 1);
+    });
+  });
+
+  // A few friend-request notifications for variety
+  makeNotif(dana,  yoni,  'friend_request', 'Yoni Levi added you as a friend', null, null, 0.5);
+  makeNotif(dana,  maya,  'friend_request', 'Maya Peretz added you as a friend', null, null, 3);
+  makeNotif(yoni,  dana,  'friend_request', 'Dana Cohen added you as a friend', null, null, 1);
+  makeNotif(eyal,  sapir, 'friend_request', 'Sapir Levy added you as a friend', null, null, 6);
+  makeNotif(amit,  rotem, 'friend_request', 'Rotem Hadad added you as a friend', null, null, 12);
+
+  await Notification.insertMany(notifications);
+  console.log(`Created ${notifications.length} notifications`);
+
   console.log('\n=== Seed complete! ===');
   console.log(`${users.length} users, ${groups.length} groups, ${posts.length} posts`);
   console.log('\nDepartments: Computer Science, Electrical Engineering, Information Systems,');

@@ -5,6 +5,7 @@ import { ToastProvider } from './components/common/Toast';
 import { ConfirmProvider } from './components/common/ConfirmDialog';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Navbar from './components/common/Navbar';
+import { LanguageProvider } from './contexts/LanguageContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import FeedPage from './pages/FeedPage';
@@ -129,6 +130,7 @@ function App() {
   };
   return (
     <BrowserRouter>
+      <LanguageProvider>
       {/* ErrorBoundary catches any unhandled JS errors in child components */}
       <ErrorBoundary>
         {/* ToastProvider makes toast notifications available app-wide via useToast() */}
@@ -195,6 +197,7 @@ function App() {
           </ConfirmProvider>
         </ToastProvider>
       </ErrorBoundary>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }

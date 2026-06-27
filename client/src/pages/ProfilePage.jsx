@@ -4,6 +4,7 @@ import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import { useToast } from '../components/common/Toast';
 import { useConfirm } from '../components/common/ConfirmDialog';
+import { useLanguage } from '../contexts/LanguageContext';
 // Icons for each achievement type — rendered inside the achievement badge
 const AchievementIcon = ({ type }) => {
   const icons = {
@@ -31,13 +32,14 @@ const ALL_ACHIEVEMENTS = [
 ];
 
 function Achievements({ posts, friends, groups }) {
+  const { t } = useLanguage();
   const postCount = posts.length;
   const friendCount = friends?.length || 0;
   const groupCount = groups?.length || 0;
 
   return (
     <div className="card">
-      <h2 className="section-title" style={{ marginBottom: 'var(--space-4)' }}>Achievements</h2>
+      <h2 className="section-title" style={{ marginBottom: 'var(--space-4)' }}>{t('achievements')}</h2>
       <div className="achievements-grid">
         {ALL_ACHIEVEMENTS.map(a => {
           const earned = a.check(postCount, friendCount, groupCount);
@@ -59,6 +61,7 @@ function ProfilePage({ currentUser, onUserUpdate }) {
   const { id } = useParams();
   const toast = useToast();
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -270,7 +273,7 @@ function ProfilePage({ currentUser, onUserUpdate }) {
                 </div>
                 <div>
                   <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    Profile Photo
+                    {t('profilePhoto')}
                   </div>
                   <input
                     ref={avatarInputRef}
@@ -285,7 +288,7 @@ function ProfilePage({ currentUser, onUserUpdate }) {
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={avatarUploading}
                   >
-                    {avatarUploading ? 'Uploading…' : 'Upload Photo'}
+                    {avatarUploading ? t('uploading') : t('uploadPhoto')}
                   </button>
                   {editForm.avatar && (
                     <button
@@ -294,25 +297,25 @@ function ProfilePage({ currentUser, onUserUpdate }) {
                       style={{ marginLeft: 8, color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}
                       onClick={() => setEditForm(prev => ({ ...prev, avatar: '' }))}
                     >
-                      Remove
+                      {t('remove')}
                     </button>
                   )}
                 </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="pe-name">Name</label>
+                <label htmlFor="pe-name">{t('name')}</label>
                 <input id="pe-name" className="form-input" value={editForm.name}
                   onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
                 <div className="form-group">
-                  <label htmlFor="pe-dept">Department</label>
+                  <label htmlFor="pe-dept">{t('department')}</label>
                   <input id="pe-dept" className="form-input" value={editForm.department}
                     onChange={e => setEditForm({ ...editForm, department: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="pe-year">Year</label>
+                  <label htmlFor="pe-year">{t('year')}</label>
                   <select id="pe-year" className="form-input" value={editForm.year}
                     onChange={e => setEditForm({ ...editForm, year: Number(e.target.value) })}>
                     {[1,2,3,4].map(y => <option key={y} value={y}>{y}</option>)}
@@ -320,8 +323,8 @@ function ProfilePage({ currentUser, onUserUpdate }) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="btn btn-primary btn-small" type="submit">Save Changes</button>
-                <button className="btn btn-secondary btn-small" type="button" onClick={() => setEditing(false)}>Cancel</button>
+                <button className="btn btn-primary btn-small" type="submit">{t('saveChanges')}</button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => setEditing(false)}>{t('cancel')}</button>
               </div>
             </form>
           ) : (
@@ -352,25 +355,25 @@ function ProfilePage({ currentUser, onUserUpdate }) {
                 {isOwnProfile && (
                   <button className="btn btn-secondary btn-small" onClick={() => setEditing(true)} aria-label="Edit profile">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Edit Profile
+                    {t('editProfile')}
                   </button>
                 )}
                 {isOwnProfile && (
-                  <button className="btn btn-danger btn-small" onClick={handleDeleteAccount}>Delete Account</button>
+                  <button className="btn btn-danger btn-small" onClick={handleDeleteAccount}>{t('deleteAccount')}</button>
                 )}
                 {!isOwnProfile && !isFriend && (
                   <button className="btn btn-primary btn-small" onClick={handleAddFriend}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-                    Add Friend
+                    {t('addFriend')}
                   </button>
                 )}
                 {!isOwnProfile && isFriend && (
-                  <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>Remove Friend</button>
+                  <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>{t('removeFriend')}</button>
                 )}
                 {!isOwnProfile && (
                   <Link to={`/chat/${id}`} className="btn btn-secondary btn-small">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                    Message
+                    {t('message')}
                   </Link>
                 )}
               </div>
@@ -450,7 +453,7 @@ function ProfilePage({ currentUser, onUserUpdate }) {
       {/* ── Friends list ────────────────────────────────────────────────── */}
       <div className="card" style={{ marginTop: 'var(--space-4)' }}>
         <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
-          Friends <span className="section-count">{profile.friends?.length || 0}</span>
+          {t('friends')} <span className="section-count">{profile.friends?.length || 0}</span>
         </h2>
         <div className="flex gap-2 flex-wrap">
           {profile.friends?.map(f => (
@@ -460,7 +463,7 @@ function ProfilePage({ currentUser, onUserUpdate }) {
             </Link>
           ))}
           {(!profile.friends || profile.friends.length === 0) && (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>No friends yet</p>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>{t('noFriendsYet')}</p>
           )}
         </div>
       </div>

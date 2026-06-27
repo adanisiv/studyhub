@@ -5,6 +5,7 @@ import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
 import { useToast } from '../components/common/Toast';
 import { useConfirm } from '../components/common/ConfirmDialog';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function GroupDetailPage({ user }) {
   // useParams extracts the :id segment from the URL (e.g. /groups/abc123)
@@ -12,8 +13,8 @@ function GroupDetailPage({ user }) {
   // useNavigate allows programmatic redirects (e.g. after deleting the group)
   const navigate = useNavigate();
   const toast = useToast();
-  // confirm() returns a Promise that resolves to true/false based on user's choice
   const confirm = useConfirm();
+  const { t } = useLanguage();
 
   const [group, setGroup] = useState(null);       // group object from the API
   const [posts, setPosts] = useState([]);          // posts belonging to this group
@@ -129,18 +130,18 @@ function GroupDetailPage({ user }) {
           /* Inline edit form — replaces the header when editing is true */
           <form onSubmit={handleUpdate}>
             <div className="form-group">
-              <label htmlFor="ge-name">Name</label>
+              <label htmlFor="ge-name">{t('name')}</label>
               <input id="ge-name" className="form-input" value={editForm.name}
                 onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
             </div>
             <div className="form-group">
-              <label htmlFor="ge-desc">Description</label>
+              <label htmlFor="ge-desc">{t('groupDescription')}</label>
               <textarea id="ge-desc" className="form-input" value={editForm.description}
                 onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
             </div>
             <div className="flex gap-2">
-              <button className="btn btn-primary btn-small" type="submit">Save</button>
-              <button className="btn btn-secondary btn-small" type="button" onClick={() => setEditing(false)}>Cancel</button>
+              <button className="btn btn-primary btn-small" type="submit">{t('save')}</button>
+              <button className="btn btn-secondary btn-small" type="button" onClick={() => setEditing(false)}>{t('cancel')}</button>
             </div>
           </form>
         ) : (
@@ -153,28 +154,25 @@ function GroupDetailPage({ user }) {
                 {group.isPrivate && (
                   <span className="private-badge">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    Private
+                    {t('private')}
                   </span>
                 )}
               </div>
               <div className="flex gap-2">
-                {/* Admin only: Edit button */}
                 {isAdmin && (
                   <button className="btn btn-small btn-secondary" onClick={() => setEditing(true)} aria-label="Edit group">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Edit
+                    {t('edit')}
                   </button>
                 )}
-                {/* Admin only: Delete button */}
                 {isAdmin && (
                   <button className="btn btn-small btn-danger" onClick={handleDelete} disabled={actionLoading}>
-                    {actionLoading ? <><span className="btn-spinner" /> Deleting...</> : 'Delete'}
+                    {actionLoading ? <><span className="btn-spinner" /> {t('deleting')}</> : t('delete')}
                   </button>
                 )}
-                {/* Non-admin member: Leave button */}
                 {isMember && !isAdmin && (
                   <button className="btn btn-small btn-outline" onClick={handleLeave} disabled={actionLoading}>
-                    {actionLoading ? <><span className="btn-spinner" /> Leaving...</> : 'Leave'}
+                    {actionLoading ? <><span className="btn-spinner" /> {t('leaving')}</> : t('leave')}
                   </button>
                 )}
               </div>
@@ -183,9 +181,9 @@ function GroupDetailPage({ user }) {
             {/* Metadata chips: subject, year, semester, privacy */}
             <div className="group-card-meta" style={{ marginTop: 'var(--space-3)' }}>
               {group.subject && <span>{group.subject}</span>}
-              <span>Year {group.year}</span>
-              <span>Semester {group.semester}</span>
-              <span>{group.isPrivate ? 'Private' : 'Public'}</span>
+              <span>{t('year')} {group.year}</span>
+              <span>{t('semester')} {group.semester}</span>
+              <span>{group.isPrivate ? t('private') : t('public')}</span>
             </div>
           </>
         )}
@@ -196,8 +194,7 @@ function GroupDetailPage({ user }) {
       {isAdmin && group.pendingRequests?.length > 0 && (
         <div className="card">
           <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
-            Pending Requests
-            {/* Count badge next to the section title */}
+            {t('pendingRequests')}
             <span className="section-count" style={{ marginLeft: 'var(--space-2)' }}>{group.pendingRequests.length}</span>
           </h2>
           {group.pendingRequests.map(u => (
@@ -208,7 +205,7 @@ function GroupDetailPage({ user }) {
               </div>
               {/* Approve button — shows spinner while the request is being processed */}
               <button className="btn btn-primary btn-small" onClick={() => handleApprove(u._id)} disabled={approveLoading === u._id}>
-                {approveLoading === u._id ? <><span className="btn-spinner" /> Approving...</> : 'Approve'}
+                {approveLoading === u._id ? <><span className="btn-spinner" /> {t('approving')}</> : t('approve')}
               </button>
             </div>
           ))}
@@ -218,7 +215,7 @@ function GroupDetailPage({ user }) {
       {/* ── Member list ────────────────────────────────────────────────── */}
       <div className="card">
         <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
-          Members <span className="section-count">{group.members?.length}</span>
+          {t('members')} <span className="section-count">{group.members?.length}</span>
         </h2>
         {/* Each member is a chip that links to their profile */}
         <div className="flex gap-2 flex-wrap">
@@ -229,7 +226,7 @@ function GroupDetailPage({ user }) {
               </div>
               {m.name}
               {/* "(admin)" label next to the group admin's name */}
-              {m._id === group.admin?._id && <span style={{ color: 'var(--accent)', fontSize: 'var(--text-xs)' }}>(admin)</span>}
+              {m._id === group.admin?._id && <span style={{ color: 'var(--accent)', fontSize: 'var(--text-xs)' }}>({t('admin')})</span>}
             </Link>
           ))}
         </div>
@@ -242,7 +239,7 @@ function GroupDetailPage({ user }) {
       {/* Empty state for members who haven't posted yet */}
       {posts.length === 0 && isMember && (
         <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
-          <div className="empty-state-text">No posts yet in this group. Start the conversation!</div>
+          <div className="empty-state-text">{t('noGroupPosts')}</div>
         </div>
       )}
 

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3'; // D3.js — the industry-standard data visualization library
 import API from '../api/axios';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function StatsPage() {
+  const { t } = useLanguage();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(''); // empty = all groups
   const [loading, setLoading] = useState(true);
@@ -259,11 +261,11 @@ function StatsPage() {
 
   const totalChartPosts = typeData.reduce((s, d) => s + d.count, 0);
   const topType = typeData.length > 0 ? typeData.reduce((a, b) => a.count > b.count ? a : b).type : null;
-  const typeLabels = { question: 'Questions', material: 'Study Materials', announcement: 'Announcements' };
+  const typeLabels = { question: t('questions'), material: t('studyMaterials'), announcement: t('announcements') };
 
   return (
     <div>
-      <h1 className="page-title">Statistics Dashboard</h1>
+      <h1 className="page-title">{t('statsDashboard')}</h1>
 
       {/* ── Platform-wide KPI cards ─────────────────────────────────────── */}
       {/* Four high-level numbers showing overall platform health */}
@@ -276,7 +278,7 @@ function StatsPage() {
             </svg>
           </div>
           <div className="kpi-value">{dashboard?.totalUsers ?? '–'}</div>
-          <div className="kpi-label">Total Students</div>
+          <div className="kpi-label">{t('totalStudents')}</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#f93a5b' }}>
@@ -285,7 +287,7 @@ function StatsPage() {
             </svg>
           </div>
           <div className="kpi-value">{dashboard?.activeGroups ?? '–'}</div>
-          <div className="kpi-label">Study Groups</div>
+          <div className="kpi-label">{t('studyGroups')}</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#f59e0b' }}>
@@ -295,7 +297,7 @@ function StatsPage() {
             </svg>
           </div>
           <div className="kpi-value">{dashboard?.postsThisWeek ?? '–'}</div>
-          <div className="kpi-label">Posts This Week</div>
+          <div className="kpi-label">{t('postsThisWeek')}</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#10b981' }}>
@@ -305,7 +307,7 @@ function StatsPage() {
             </svg>
           </div>
           <div className="kpi-value">{dashboard?.newMembers ?? '–'}</div>
-          <div className="kpi-label">New Members (30d)</div>
+          <div className="kpi-label">{t('newMembers')}</div>
         </div>
       </div>
 
@@ -314,10 +316,10 @@ function StatsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-              Filter charts by group
+              {t('filterByGroup')}
             </div>
             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-              Select a study group to see its statistics, or leave on "All groups" for the full picture.
+              {t('filterDesc')}
             </div>
           </div>
           <select
@@ -326,7 +328,7 @@ function StatsPage() {
             value={selectedGroup}
             onChange={e => setSelectedGroup(e.target.value)}
           >
-            <option value="">All groups</option>
+            <option value="">{t('allGroups')}</option>
             {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
           </select>
         </div>
@@ -339,19 +341,19 @@ function StatsPage() {
             flexWrap: 'wrap',
           }}>
             <div>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Showing posts</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('showingPosts')}</span>
               <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>{totalChartPosts}</div>
             </div>
             {topType && (
               <div>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Most common type</span>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('mostCommonType')}</span>
                 <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>{typeLabels[topType] || topType}</div>
               </div>
             )}
             <div>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>Scope</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('scope')}</span>
               <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {selectedGroup ? groups.find(g => g._id === selectedGroup)?.name || 'Selected group' : 'All groups'}
+                {selectedGroup ? groups.find(g => g._id === selectedGroup)?.name || t('allGroups') : t('allGroups')}
               </div>
             </div>
           </div>
@@ -360,9 +362,9 @@ function StatsPage() {
 
       {/* ── Line chart: daily activity (full width) ─────────────────────── */}
       <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-        <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>Daily Post Activity</h2>
+        <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>{t('dailyActivity')}</h2>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-          Number of posts published each day over the last 30 days
+          {t('dailyActivityDesc')}
         </p>
         {loading ? (
           <div className="skeleton" style={{ height: 220, borderRadius: 'var(--radius-md)' }} />
@@ -375,9 +377,9 @@ function StatsPage() {
       <div className="charts-grid">
         {/* Bar chart: posts per month */}
         <div className="card">
-          <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>Posts per Month</h2>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>{t('postsPerMonth')}</h2>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-            Monthly posting volume — each bar shows the number of posts that month
+            {t('postsPerMonthDesc')}
           </p>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
@@ -388,9 +390,9 @@ function StatsPage() {
 
         {/* Pie / donut chart: post types */}
         <div className="card">
-          <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>Post Types</h2>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-1)' }}>{t('postTypes')}</h2>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-            What kind of content is being shared — questions, study materials, or announcements
+            {t('postTypesDesc')}
           </p>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
@@ -400,9 +402,9 @@ function StatsPage() {
               {/* Color legend */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-3)', flexWrap: 'wrap' }}>
                 {[
-                  { color: '#f59e0b', label: 'Questions' },
-                  { color: '#6366f1', label: 'Study Materials' },
-                  { color: '#f93a5b', label: 'Announcements' },
+                  { color: '#f59e0b', label: t('questions') },
+                  { color: '#6366f1', label: t('studyMaterials') },
+                  { color: '#f93a5b', label: t('announcements') },
                 ].map(({ color, label }) => (
                   <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                     <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: 'inline-block', flexShrink: 0 }} />
