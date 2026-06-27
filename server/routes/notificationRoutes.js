@@ -1,10 +1,10 @@
-const router = require('express').Router();
+﻿const router = require('express').Router();
 const ctrl = require('../controllers/notificationController');
 const auth = require('../middleware/auth');
 
-router.get('/',         auth, ctrl.list);
-router.get('/unread',   auth, ctrl.unreadCount);
-router.put('/read-all', auth, ctrl.markAllRead);
-router.delete('/:id',   auth, ctrl.remove);
+router.get('/',         auth, ctrl.list);         // GET    /api/notifications        — list recent (30)
+router.get('/unread',   auth, ctrl.unreadCount);  // GET    /api/notifications/unread — badge count
+router.put('/read-all', auth, ctrl.markAllRead);  // PUT    /api/notifications/read-all — mark all read
+router.delete('/:id',   auth, ctrl.remove);       // DELETE /api/notifications/:id   — delete one
 
 module.exports = router;

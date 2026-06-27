@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
 
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');    // error message from the server
+  const [loading, setLoading] = useState(false); // disables the button while the request is pending
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // prevent default browser form submission (page reload)
     setError('');
     setLoading(true);
     try {
+      // POST /api/auth/login — returns { user, token }
       const res = await API.post('/auth/login', { email, password });
+      // Pass both to App.jsx which stores them and updates the auth state
       onLogin(res.data.user, res.data.token);
     } catch (err) {
+      // err.response?.data?.error is the message from our Express error handler
+      // The fallback covers network errors (server down, etc.)
       setError(err.response?.data?.error || 'Login failed');
     }
     setLoading(false);
@@ -24,6 +28,7 @@ function LoginPage({ onLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-container">
+        {/* Branding header */}
         <div className="auth-header">
           <div className="auth-logo">
             <svg className="brand-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -37,20 +42,45 @@ function LoginPage({ onLogin }) {
           <p className="auth-subtitle">Sign in to continue to your study network</p>
         </div>
 
+        {/* Login form card */}
         <div className="auth-card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="login-email">Email address</label>
-              <input id="login-email" className="form-input" type="email" value={email}
-                onChange={e => setEmail(e.target.value)} placeholder="you@university.edu" required autoComplete="email" />
+              <input
+                id="login-email"
+                className="form-input"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@university.edu"
+                required
+                autoComplete="email"
+              />
             </div>
             <div className="form-group">
               <label htmlFor="login-password">Password</label>
-              <input id="login-password" className="form-input" type="password" value={password}
-                onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required autoComplete="current-password" />
+              <input
+                id="login-password"
+                className="form-input"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+              />
             </div>
+
+            {/* Error message — role="alert" makes screen readers announce it immediately */}
             {error && <p className="error-text" role="alert">{error}</p>}
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }} disabled={loading}>
+
+            {/* Submit button — shows spinner while loading, disabled to prevent double-submit */}
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }}
+              disabled={loading}
+            >
               {loading ? <><span className="btn-spinner" /> Signing in...</> : 'Sign in'}
             </button>
           </form>

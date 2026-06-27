@@ -1,18 +1,21 @@
-const router = require('express').Router();
+﻿const router = require('express').Router();
 const ctrl = require('../controllers/postController');
 const auth = require('../middleware/auth');
-const { createPostRules } = require('../middleware/validate');
+const { createPostRules } = require('../middleware/validate'); // validates content, type, tags
 
-router.post('/',               auth, createPostRules, ctrl.create);
-router.get('/feed',            auth, ctrl.feed);
-router.get('/my',              auth, ctrl.myPosts);
-router.get('/search',          auth, ctrl.search);
-router.get('/group/:groupId',  auth, ctrl.byGroup);
-router.get('/:id',             auth, ctrl.getById);
-router.put('/:id',             auth, ctrl.update);
-router.delete('/:id',          auth, ctrl.remove);
-router.post('/:id/comment',    auth, ctrl.addComment);
-router.delete('/:postId/comment/:commentId', auth, ctrl.deleteComment);
-router.post('/:id/like',       auth, ctrl.toggleLike);
+// Post CRUD
+router.post('/',               auth, createPostRules, ctrl.create);  // POST   /api/posts       — create
+router.get('/feed',            auth, ctrl.feed);                     // GET    /api/posts/feed  — personalized feed
+router.get('/my',              auth, ctrl.myPosts);                  // GET    /api/posts/my    — own posts
+router.get('/search',          auth, ctrl.search);                   // GET    /api/posts/search — advanced search
+router.get('/group/:groupId',  auth, ctrl.byGroup);                  // GET    /api/posts/group/:id — group posts
+router.get('/:id',             auth, ctrl.getById);                  // GET    /api/posts/:id   — single post
+router.put('/:id',             auth, ctrl.update);                   // PUT    /api/posts/:id   — edit
+router.delete('/:id',          auth, ctrl.remove);                   // DELETE /api/posts/:id  — delete
+
+// Social interactions (nested under /:id)
+router.post('/:id/comment',                      auth, ctrl.addComment);     // add comment
+router.delete('/:postId/comment/:commentId',     auth, ctrl.deleteComment);  // delete comment
+router.post('/:id/like',                         auth, ctrl.toggleLike);     // toggle like
 
 module.exports = router;

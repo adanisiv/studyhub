@@ -1,16 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 
 function SearchPage({ user }) {
-  const [tab, setTab] = useState('groups');
+  // Read ?tab=posts&tag=javascript from the URL so clickable hashtags can land here
+  const location = useLocation();
+  const urlParams = new URLSearchParams(location.search);
+  const urlTab = urlParams.get('tab');
+  const urlTag = urlParams.get('tag') || '';
+  const initialTab = ['groups', 'posts', 'users'].includes(urlTab) ? urlTab : 'groups';
 
-  // --- Group search ---
+  // 'groups' | 'posts' | 'users' — controls which tab is active
+  const [tab, setTab] = useState(initialTab);
+  // Four optional filter fields — only non-empty ones are sent as query params
   const [groupFilters, setGroupFilters] = useState({ name: '', year: '', semester: '', department: '' });
   const [groupResults, setGroupResults] = useState([]);
-  const [groupSearched, setGroupSearched] = useState(false);
+  const [groupSearched, setGroupSearched] = useState(false); // has the user searched yet?
 
+  // Collect only non-empty filters and call GET /api/groups/search
   const searchGroups = async () => {
     const params = {};
     if (groupFilters.name) params.name = groupFilters.name;
@@ -25,12 +33,21 @@ function SearchPage({ user }) {
       console.error(err);
     }
   };
-
-  // --- Post search ---
-  const [postFilters, setPostFilters] = useState({ keyword: '', type: '', dateFrom: '', dateTo: '', tag: '' });
+  // Five optional filter fields for post search. Pre-fill 'tag' from URL.
+  const [postFilters, setPostFilters] = useState({ keyword: '', type: '', dateFrom: '', dateTo: '', tag: urlTag });
   const [postResults, setPostResults] = useState([]);
   const [postSearched, setPostSearched] = useState(false);
 
+  // Auto-run the post search when the URL has a tag param (clicked hashtag flow).
+  // Intentionally fires only on mount — query params don't change without remounting.
+  useEffect(() => {
+    if (urlTag && initialTab === 'posts') {
+      const t = setTimeout(() => searchPosts(), 0);
+      return () => clearTimeout(t);
+    }
+  }, []); // eslint-disable-line
+
+  // Collect only non-empty filters and call GET /api/posts/search
   const searchPosts = async () => {
     const params = {};
     if (postFilters.keyword) params.keyword = postFilters.keyword;
@@ -46,34 +63,42 @@ function SearchPage({ user }) {
       console.error(err);
     }
   };
-
-  // --- jQuery Ajax live user search (course requirement) ---
+  // Refs give us direct access to the DOM elements that jQuery needs.
+  // We don't use React state here because jQuery manages these elements directly.
   const jqueryInputRef = useRef(null);
   const jqueryResultsRef = useRef(null);
 
   useEffect(() => {
+    // jQuery is loaded globally in index.html as window.jQuery
     const $ = window.jQuery;
     if (!$ || !jqueryInputRef.current) return;
 
     const $input = $(jqueryInputRef.current);
     const $results = $(jqueryResultsRef.current);
+    // Read the JWT from localStorage for the Authorization header
     const token = localStorage.getItem('token');
 
+    // 'keyup' fires after every keystroke in the search input
     $input.on('keyup', function () {
       const val = $(this).val().trim();
+      // Require at least 2 characters to start searching (avoid empty/trivial searches)
       if (val.length < 2) {
-        $results.slideUp(200).empty();
+        $results.slideUp(200).empty(); // hide and clear the dropdown
         return;
       }
+      // AJAX call to GET /api/users/search?name=...
       $.ajax({
         url: `http://localhost:5000/api/users/search?name=${encodeURIComponent(val)}`,
         method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // send JWT so the server recognizes us
         success: function (data) {
-          $results.empty();
+          $results.empty(); // clear previous results before adding new ones
           if (data.length === 0) {
+            // No users found: show a "not found" message
             $results.append('<div class="search-result-item" style="color:var(--text-tertiary)">No users found</div>');
           } else {
+            // Build an item for each user using jQuery DOM creation (not innerHTML)
+            // This avoids XSS — jQuery's .text() escapes user content automatically
             data.forEach(function (u) {
               var $item = $('<div class="search-result-item"></div>').attr('data-id', u._id);
               $item.append($('<strong></strong>').text(u.name));
@@ -81,31 +106,36 @@ function SearchPage({ user }) {
               $results.append($item);
             });
           }
-          $results.slideDown(200);
+          $results.slideDown(200); // animate dropdown open
         },
         error: function () {
-          $results.slideUp(200);
+          $results.slideUp(200); // hide dropdown on error
         }
       });
     });
 
+    // Clicking a result item navigates to that user's profile
     $results.on('click', '.search-result-item', function () {
       const id = $(this).data('id');
       if (id) window.location.href = `/profile/${id}`;
     });
 
+    // When the input loses focus, hide the dropdown after a short delay
+    // The delay allows click events on results to fire before the dropdown closes
     $input.on('blur', function () {
       setTimeout(() => $results.slideUp(200), 200);
     });
 
+    // Cleanup: remove all jQuery event listeners when the tab changes or component unmounts
     return () => { $input.off(); $results.off(); };
-  }, [tab]);
+  }, [tab]); // re-run when tab changes so jQuery rebinds to the correct DOM elements
 
   return (
     <div>
       <h1 className="page-title">Search</h1>
 
-      {/* Tab buttons */}
+      {/* ── Tab buttons ──────────────────────────────────────────────────── */}
+      {/* role="tablist" + role="tab" + aria-selected tell screen readers which tab is active */}
       <div className="search-tabs" role="tablist" aria-label="Search categories">
         <button className={`search-tab ${tab === 'groups' ? 'active' : ''}`}
           onClick={() => setTab('groups')} role="tab" aria-selected={tab === 'groups'}>
@@ -124,12 +154,14 @@ function SearchPage({ user }) {
         </button>
       </div>
 
-      {/* === Group search === */}
+      {/* ── Groups tab ───────────────────────────────────────────────────── */}
       {tab === 'groups' && (
         <div role="tabpanel">
           <div className="card">
             <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Search Groups</h2>
+            {/* Filter row: name, year dropdown, semester dropdown, department, search button */}
             <div className="flex gap-2 flex-wrap">
+              {/* sr-only labels keep the form accessible without visual clutter */}
               <label htmlFor="sg-name" className="sr-only">Group name</label>
               <input id="sg-name" className="form-input" style={{ flex: 1, minWidth: 150 }} placeholder="Group name"
                 value={groupFilters.name} onChange={e => setGroupFilters({ ...groupFilters, name: e.target.value })} />
@@ -156,11 +188,13 @@ function SearchPage({ user }) {
               </button>
             </div>
           </div>
+          {/* "No results" message — only shown after the user has clicked Search */}
           {groupSearched && groupResults.length === 0 && (
             <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
               <div className="empty-state-text">No groups found matching your criteria</div>
             </div>
           )}
+          {/* Render each matching group as a card */}
           {groupResults.map(g => (
             <div key={g._id} className="group-card">
               <Link to={`/groups/${g._id}`} className="group-card-name">{g.name}</Link>
@@ -176,11 +210,12 @@ function SearchPage({ user }) {
         </div>
       )}
 
-      {/* === Post search === */}
+      {/* ── Posts tab ────────────────────────────────────────────────────── */}
       {tab === 'posts' && (
         <div role="tabpanel">
           <div className="card">
             <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>Search Posts</h2>
+            {/* Filter row: keyword, type, date from/to, tag, search button */}
             <div className="flex gap-2 flex-wrap">
               <label htmlFor="sp-keyword" className="sr-only">Keyword</label>
               <input id="sp-keyword" className="form-input" style={{ flex: 1, minWidth: 150 }} placeholder="Keyword"
@@ -194,6 +229,7 @@ function SearchPage({ user }) {
                 <option value="announcement">Announcement</option>
               </select>
               <label htmlFor="sp-from" className="sr-only">Date from</label>
+              {/* type="date" renders a native date picker in the browser */}
               <input id="sp-from" className="form-input" style={{ width: 140 }} type="date"
                 value={postFilters.dateFrom} onChange={e => setPostFilters({ ...postFilters, dateFrom: e.target.value })} />
               <label htmlFor="sp-to" className="sr-only">Date to</label>
@@ -208,18 +244,20 @@ function SearchPage({ user }) {
               </button>
             </div>
           </div>
+          {/* "No results" shown after user has searched and server returned empty array */}
           {postSearched && postResults.length === 0 && (
             <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
               <div className="empty-state-text">No posts found matching your criteria</div>
             </div>
           )}
+          {/* Render each matching post using the shared PostCard component */}
           {postResults.map(post => (
             <PostCard key={post._id} post={post} currentUserId={user._id} />
           ))}
         </div>
       )}
 
-      {/* === jQuery Ajax user search === */}
+      {/* ── Users tab (jQuery Ajax live search) ─────────────────────────── */}
       {tab === 'users' && (
         <div role="tabpanel">
           <div className="card">
@@ -229,7 +267,9 @@ function SearchPage({ user }) {
             </p>
             <div className="search-bar-container">
               <label htmlFor="user-search" className="sr-only">Search by name</label>
+              {/* jqueryInputRef lets jQuery bind 'keyup' to this input element */}
               <input ref={jqueryInputRef} id="user-search" className="form-input" placeholder="Start typing a name..." />
+              {/* jqueryResultsRef is the dropdown container that jQuery populates */}
               <div ref={jqueryResultsRef} className="search-results-dropdown"></div>
             </div>
           </div>

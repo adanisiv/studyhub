@@ -1,162 +1,96 @@
 # StudyHub
 
-A full-stack social network for university students — share posts, join study groups, chat in real time, and track activity statistics.
+A social network for university students. Share posts, join study groups, chat in real time, and explore activity statistics.
+
+Built as the final project for the Android 2 course.
 
 ---
 
 ## Tech Stack
 
 **Backend**
-- Node.js + Express (MVC architecture)
+- Node.js + Express (MVC structure)
 - MongoDB + Mongoose
-- Socket.io (real-time chat + notifications)
-- JWT authentication + bcrypt
-- Multer (file uploads — images & videos)
+- Socket.io for real-time chat and notifications
+- JWT authentication with bcrypt password hashing
+- Multer for file uploads
 
 **Frontend**
-- React 18 + React Router v6
-- D3.js (bar chart + pie chart)
-- jQuery + AJAX (live user search)
-- CSS Custom Properties design system (light/dark theme)
+- React 18 with React Router v6
+- D3.js for charts (bar / pie / line)
+- jQuery + AJAX for live user search
 - Socket.io client
+- CSS custom properties with light + dark theme
 
 ---
 
 ## Features
 
-### Authentication
-- Register with name, email, password, department, year
-- Login with JWT — token stored in localStorage
-- Protected routes redirect to login when unauthenticated
-
-### Feed
-- Create posts with type (Question / Material / Announcement), tags, and optional media (image or video)
-- Like and unlike posts
-- Comment on posts; delete your own comments (post authors and group admins can also delete any comment)
-- Edit and delete your own posts
-- Skeleton loading placeholders while data fetches
-
-### Groups
-- Browse all groups in a responsive two-column layout
-- Private groups require admin approval to join
-- Group detail page: member list, post feed, join/leave/request actions
-- Search groups by name, year, semester, and department (advanced search)
-
-### Real-time Chat
-- One-on-one messaging via Socket.io rooms
-- Chat history persisted in MongoDB
-- Typing indicator
-- JWT-authenticated socket connection
-
-### Notifications
-- Real-time bell icon in the navbar with unread badge count
-- Notifications for: likes, comments, friend requests, group join requests, group approvals
-- Mark all as read; delete individual notifications
-- Powered by Socket.io — each logged-in user joins a personal room on connect
-
-### Search
-- **Groups tab** — filter by name, year, semester, department
-- **Posts tab** — filter by keyword, type, date range, tag
-- **Users tab** — live jQuery + AJAX search (type 2+ characters for instant results)
-
-### Profile
-- Canvas API banner with gradient background and decorative circles
-- Edit name, department, year
-- Add / remove friends
-- Message button links directly to chat
-- View own posts on profile page
-- Delete account
-
-### Statistics
-- Bar chart: posts per month (D3.js with gradient bars)
-- Pie chart: post type distribution (D3.js donut chart)
-- Filter charts by group
-- Theme-aware colors (light / dark mode)
-- Skeleton loading for charts
-
-### Dark Mode
-- Full dark/light theme toggle in the navbar
-- Persisted to `localStorage`
-- 70+ CSS custom properties — all components update automatically
-
-### Responsive Design
-- Hamburger menu on mobile (768 px and below)
-- Two-column group layout collapses to single column on small screens
+- **Auth** — register, login (JWT), protected routes
+- **Feed** — create, edit, delete posts; like, comment, infinite scroll
+- **Hashtags** — clickable `#tags` open a dedicated tag page
+- **Groups** — public and private groups, admin approval flow
+- **Real-time chat** — one-on-one messaging with typing indicator, read receipts, and message search
+- **Notifications** — bell icon with unread badge, real-time updates
+- **Search**
+  - Groups: by name / year / semester / department / tag
+  - Posts: by keyword / type / tag / date range
+  - Users: live jQuery + AJAX search by name
+- **Profile** — Canvas API banner, achievements, personal stats, friends list
+- **Statistics dashboard** — three D3.js charts (bar, donut, line) with group filter
+- **Dark mode** toggle, persisted to localStorage
+- **Responsive design** for mobile and desktop
 
 ---
 
-## CSS3 Requirements
+## CSS3 Features Used
 
-| Requirement | Where used |
+| Feature | Where |
 |---|---|
-| `@font-face` | App.css — Rubik font |
-| `border-radius` | Cards, avatars, buttons, badges |
-| `text-shadow` | Page title, auth header |
+| `@font-face` | `client/public/index.html` — Plus Jakarta Sans |
+| `border-radius` | Cards, buttons, avatars |
+| `text-shadow` | Hashtag header, auth pages |
 | `transition` | All interactive elements |
-| `multiple-columns` | Groups page grid |
-| `backdrop-filter: blur` | Glassmorphism navbar + dropdowns |
-| Canvas API | Profile banner (ProfilePage) |
-| HTML5 Video | Media posts in PostCard |
-| D3.js charts | StatsPage (bar + pie) |
-| jQuery + AJAX | Live user search in SearchPage |
+| `multiple-columns` | Groups page masonry layout |
+
+---
+
+## Course Requirement Highlights
+
+- **MVC** — separate `models/`, `controllers/`, `routes/` folders on the server
+- **3 main models** with full CRUD + Search — User, Group, Post
+- **2 advanced searches** with 3+ parameters — Groups search and Posts search
+- **jQuery + AJAX** — live user search in `SearchPage.jsx` Users tab
+- **React Video** — `<video>` element in `PostCard.jsx`
+- **React Canvas** — profile banner in `ProfilePage.jsx`
+- **Socket.io chat** — `chatHandler.js` on the server, `ChatPage.jsx` on the client
+- **D3.js charts** — three charts in `StatsPage.jsx`, all data from MongoDB
 
 ---
 
 ## Project Structure
 
 ```
-studyhub/
+studyhub-run/
 ├── server/
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── groupController.js
-│   │   ├── messageController.js
-│   │   ├── notificationController.js
-│   │   ├── postController.js
-│   │   ├── statsController.js
-│   │   └── userController.js
-│   ├── models/
-│   │   ├── Group.js
-│   │   ├── Message.js
-│   │   ├── Notification.js
-│   │   ├── Post.js
-│   │   └── User.js
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── groupRoutes.js
-│   │   ├── notificationRoutes.js
-│   │   ├── postRoutes.js
-│   │   ├── statsRoutes.js
-│   │   └── userRoutes.js
-│   ├── uploads/           # Uploaded media files (gitignored)
-│   ├── .env               # Environment variables (not committed)
-│   ├── .env.example       # Template for environment setup
-│   ├── seed.js            # Database seed (16 users, 7 groups, ~50 posts)
-│   └── server.js
-├── client/
-│   ├── public/
-│   │   └── index.html
-│   └── src/
-│       ├── api/
-│       │   └── axios.js
-│       ├── components/
-│       │   └── common/
-│       │       ├── Navbar.jsx
-│       │       ├── PostCard.jsx
-│       │       └── PostForm.jsx
-│       ├── pages/
-│       │   ├── ChatPage.jsx
-│       │   ├── FeedPage.jsx
-│       │   ├── GroupDetailPage.jsx
-│       │   ├── GroupsPage.jsx
-│       │   ├── LoginPage.jsx
-│       │   ├── ProfilePage.jsx
-│       │   ├── RegisterPage.jsx
-│       │   ├── SearchPage.jsx
-│       │   └── StatsPage.jsx
-│       ├── App.css
-│       └── App.jsx
-└── README.md
+│   ├── controllers/      — request handlers
+│   ├── models/           — Mongoose schemas
+│   ├── routes/           — Express routers
+│   ├── middleware/       — auth + validation
+│   ├── socket/           — Socket.io chat handler
+│   ├── config/           — DB connection
+│   ├── uploads/          — uploaded files (gitignored)
+│   ├── seed.js           — populate DB with sample data
+│   └── server.js         — server entry point
+└── client/
+    ├── public/
+    │   └── index.html    — loads jQuery + Plus Jakarta Sans
+    └── src/
+        ├── api/          — axios instance
+        ├── components/   — shared components
+        ├── pages/        — route pages
+        ├── App.jsx       — router + auth state
+        └── App.css       — global styles
 ```
 
 ---
@@ -164,144 +98,142 @@ studyhub/
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 18 or higher
 - MongoDB running locally on port 27017
 
 ### Installation
 
 ```bash
-# 1. Clone the repository
+# Clone
 git clone https://github.com/adanisiv/studyhub.git
 cd studyhub
 
-# 2. Install server dependencies
+# Install server dependencies
 cd server
 npm install
 
-# 3. Set up environment variables
+# Set up environment variables
 cp .env.example .env
-# Edit .env — set your JWT_SECRET
 
-# 4. Seed the database
+# Seed the database with sample users, groups, and posts
 node seed.js
 
-# 5. Start the server
+# Start the server (port 5000)
 node server.js
 
-# 6. In a new terminal — install and start the client
+# In a separate terminal — start the client (port 3000)
 cd ../client
 npm install
 npm start
 ```
 
-App runs at `http://localhost:3000`.
+The app runs at http://localhost:3000.
 
-### Seed Accounts
+### Sample Login
 
-All seed accounts use the password `123456`.
+All seed accounts use password `123456`.
 
 | Name | Email |
 |---|---|
 | Dana Cohen | dana@test.com |
 | Yoni Levi | yoni@test.com |
-| Noa Shapiro | noa@test.com |
-| Admin User | admin@test.com |
-| + 12 more | ... |
+| Admin User | admin@studyhub.com (password: `admin123`) |
+
+The seed file creates 25 users across 7 departments, plus groups, posts, comments, friendships, and chat messages.
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
+`.env` file in the `server/` folder:
 
-```env
+```
 MONGO_URI=mongodb://localhost:27017/studyhub
-JWT_SECRET=your_secret_key_here
+JWT_SECRET=your_secret_here
 PORT=5000
 ```
 
 ---
 
-## API Endpoints
+## API Reference
 
-### Auth
-| Method | Path | Description |
-|---|---|---|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login, returns JWT |
+### Auth — `/api/auth`
+- `POST /register` — create account, returns JWT
+- `POST /login` — sign in, returns JWT
+- `GET /me` — current user (requires token)
 
-### Users
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/users/:id` | Get user profile |
-| PUT | `/api/users/:id` | Update profile |
-| DELETE | `/api/users/:id` | Delete account |
-| POST | `/api/users/:id/friend` | Add friend |
-| DELETE | `/api/users/:id/friend` | Remove friend |
-| GET | `/api/users/search?name=` | Search users by name |
+### Users — `/api/users`
+- `GET /` — list users
+- `GET /search?name=&department=&year=` — search users (3 filters)
+- `GET /:id` — user profile
+- `PUT /:id` — update own profile
+- `DELETE /:id` — delete own account
+- `POST /:id/friend` — add friend
+- `DELETE /:id/friend` — remove friend
 
-### Posts
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/posts?groupId=` | List posts (optional group filter) |
-| GET | `/api/posts/my` | Own posts |
-| GET | `/api/posts/search` | Advanced post search |
-| POST | `/api/posts` | Create post |
-| PUT | `/api/posts/:id` | Edit post |
-| DELETE | `/api/posts/:id` | Delete post |
-| POST | `/api/posts/:id/like` | Toggle like |
-| POST | `/api/posts/:id/comment` | Add comment |
-| DELETE | `/api/posts/:id/comment/:commentId` | Delete comment |
+### Groups — `/api/groups`
+- `GET /` — list groups
+- `GET /search?name=&year=&semester=&department=&tag=` — advanced search (5 filters)
+- `GET /:id` — group details
+- `POST /` — create group
+- `PUT /:id` — edit (admin only)
+- `DELETE /:id` — delete (admin only)
+- `POST /:id/join` — join or request to join
+- `POST /:id/approve` — approve a pending request (admin only)
+- `POST /:id/leave` — leave the group
 
-### Groups
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/groups` | List all groups |
-| GET | `/api/groups/search` | Advanced group search |
-| GET | `/api/groups/:id` | Group details |
-| POST | `/api/groups` | Create group |
-| POST | `/api/groups/:id/join` | Join or request to join |
-| POST | `/api/groups/:id/approve/:userId` | Approve join request |
-| DELETE | `/api/groups/:id/leave` | Leave group |
+### Posts — `/api/posts`
+- `GET /feed?page=&limit=` — paginated feed
+- `GET /my` — own posts
+- `GET /search?keyword=&type=&dateFrom=&dateTo=&tag=` — advanced search (5 filters)
+- `GET /group/:groupId` — posts in a group
+- `GET /:id` — single post
+- `POST /` — create
+- `PUT /:id` — edit
+- `DELETE /:id` — delete
+- `POST /:id/like` — toggle like
+- `POST /:id/comment` — add comment
+- `DELETE /:postId/comment/:commentId` — delete comment
 
-### Notifications
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/notifications` | List notifications |
-| GET | `/api/notifications/unread` | Unread count |
-| PUT | `/api/notifications/read-all` | Mark all read |
-| DELETE | `/api/notifications/:id` | Delete notification |
+### Messages — `/api/messages`
+- `GET /conversations` — list conversations with last message and unread count
+- `GET /search?roomId=&keyword=&dateFrom=&dateTo=` — search messages in a room
+- `GET /history/:roomId` — load room history
 
-### Upload
-| Method | Path | Description |
-|---|---|---|
-| POST | `/api/upload` | Upload image or video (max 10 MB) |
+### Notifications — `/api/notifications`
+- `GET /` — list (most recent 30)
+- `GET /unread` — unread count for badge
+- `PUT /read-all` — mark all read
+- `DELETE /:id` — delete one
 
-### Stats
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/stats/posts-per-month` | Monthly post counts |
-| GET | `/api/stats/post-types` | Post type distribution |
+### Stats — `/api/stats`
+- `GET /dashboard` — KPI counts
+- `GET /trending` — trending tags and top groups
+- `GET /posts-per-month?groupId=` — bar chart data
+- `GET /post-types?groupId=` — pie chart data
+- `GET /daily-activity?groupId=` — line chart data (last 30 days)
+- `GET /user/:userId` — personal stats for the profile page
+
+### Uploads — `/api/upload`
+- `POST /` — upload an image, video, or document (max 25 MB)
 
 ---
 
 ## Socket.io Events
 
-Clients authenticate with `{ auth: { token } }` on connect. The server verifies the JWT and auto-joins the user to `user_<userId>` for personal notifications.
+Clients authenticate by sending `{ auth: { token } }` on connect.
 
-### Chat
-| Event | Direction | Payload |
-|---|---|---|
-| `join_room` | Client → Server | `roomId` |
-| `chat_history` | Server → Client | `Message[]` |
-| `send_message` | Client → Server | `{ roomId, senderId, text }` |
-| `receive_message` | Server → Client | `Message` |
-| `typing` | Client → Server | `{ roomId, userName }` |
-| `stop_typing` | Client → Server | `{ roomId }` |
-| `user_typing` | Server → Client | `{ userName }` |
-| `user_stop_typing` | Server → Client | — |
+### Chat events
+- `join_room` (client → server) — open a conversation
+- `chat_history` (server → client) — message history for the room
+- `send_message` (client → server) — send a message
+- `receive_message` (server → client) — new message in the room
+- `mark_read` (client → server) — mark messages as read
+- `messages_read` (server → client) — other side read your messages
+- `typing` / `stop_typing` — typing indicator
+- `user_online` / `user_offline` — presence broadcast
 
-### Notifications
-| Event | Direction | Payload |
-|---|---|---|
-| `new_notification` | Server → Client | `Notification` |
+### Notification events
+- `new_notification` (server → client) — push a fresh notification
+
+---

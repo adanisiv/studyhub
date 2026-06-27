@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+// Emoji icons for each notification type (shown in the notification list)
 const TYPE_ICON = {
   like: '❤️',
   comment: '💬',
@@ -10,15 +11,19 @@ const TYPE_ICON = {
 };
 
 function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onDeleteNotification }) {
+  // useLocation() gives the current URL path — used to highlight the active nav link
   const location = useLocation();
   const isActive = (path) => location.pathname === path ? 'nav-link active' : 'nav-link';
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);    // mobile hamburger menu open/closed
+  const [notifOpen, setNotifOpen] = useState(false);  // notification panel open/closed
+
+  // Initialize dark mode from localStorage (persists across sessions)
   const [dark, setDark] = useState(
     () => document.documentElement.getAttribute('data-theme') === 'dark'
   );
 
+  // Toggle dark mode: update state, set the data-theme attribute on <html>, save to localStorage
   const toggleDark = () => {
     const next = !dark;
     setDark(next);
@@ -26,7 +31,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
     localStorage.setItem('theme', next ? 'dark' : 'light');
   };
 
-  // Close panel on Escape
+  // Close the notification panel when the user presses Escape
   useEffect(() => {
     if (!notifOpen) return;
     const handler = (e) => { if (e.key === 'Escape') setNotifOpen(false); };
@@ -34,9 +39,10 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
     return () => document.removeEventListener('keydown', handler);
   }, [notifOpen]);
 
-  // Close mobile menu on route change
+  // Automatically close the mobile menu when the user navigates to a new page
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
+  // Convert a timestamp to a human-readable relative time (e.g. "5m ago", "2h ago")
   const timeAgo = (date) => {
     const mins = Math.floor((Date.now() - new Date(date)) / 60000);
     if (mins < 1) return 'just now';
@@ -46,12 +52,15 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  // First letter of the user's name for the avatar initial
   const initial = user.name?.charAt(0)?.toUpperCase() || '?';
 
   return (
     <>
       <nav className="navbar" role="navigation" aria-label="Main navigation">
         <div className="navbar-inner">
+
+          {/* Logo / Home link */}
           <Link to="/" className="navbar-brand">
             <svg className="brand-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/>
@@ -61,6 +70,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
             StudyHub
           </Link>
 
+          {/* Hamburger button — only visible on small screens (CSS hides on desktop) */}
           <button
             className="hamburger"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -74,6 +84,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
             )}
           </button>
 
+          {/* Navigation links — collapse into hamburger menu on mobile */}
           <div className={`nav-links ${menuOpen ? 'open' : ''}`} role="menubar">
             <Link to="/" className={isActive('/')} role="menuitem">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
@@ -91,6 +102,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
               Stats
             </Link>
+            {/* Profile link — shows first name and a letter avatar */}
             <Link to={`/profile/${user._id}`} className="nav-user-btn" aria-label={`Profile for ${user.name}`}>
               <span className="nav-user-avatar" aria-hidden="true">{initial}</span>
               {user.name?.split(' ')[0]}
@@ -98,8 +110,9 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
             </Link>
           </div>
 
+          {/* Right-side action buttons */}
           <div className="nav-actions">
-            {/* Notification bell — opens slide-in panel */}
+            {/* Bell icon — shows unread badge and opens notification panel */}
             <button
               className="nav-icon-btn"
               onClick={() => setNotifOpen(true)}
@@ -109,10 +122,11 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
               </svg>
+              {/* Badge: hidden when 0, shows '9+' when > 9 */}
               {unreadCount > 0 && <span className="notification-badge" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}
             </button>
 
-            {/* Dark mode toggle */}
+            {/* Dark/light mode toggle */}
             <button className="nav-icon-btn" onClick={toggleDark} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
               {dark ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -129,12 +143,15 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
         </div>
       </nav>
 
-      {/* Notification Center — slide-in panel */}
+      {/* ── Notification Center ─────────────────────────────────────────── */}
+      {/* Semi-transparent overlay — clicking it closes the panel */}
       <div
         className={`notif-center-overlay ${notifOpen ? 'open' : ''}`}
         onClick={() => setNotifOpen(false)}
         aria-hidden="true"
       />
+
+      {/* Slide-in notification panel */}
       <div
         className={`notif-center-panel ${notifOpen ? 'open' : ''}`}
         role="dialog"
@@ -157,6 +174,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
 
         <div className="notif-center-body">
           {notifications.length === 0 ? (
+            /* Empty state when no notifications exist */
             <div className="empty-state" style={{ padding: '60px 24px' }}>
               <div className="empty-state-icon">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -167,6 +185,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               <div className="empty-state-text">No notifications yet. Interact with posts and groups to get notified.</div>
             </div>
           ) : (
+            /* Render each notification with type icon, message, time, and delete button */
             notifications.map(n => (
               <div key={n._id} className={`notif-item ${!n.read ? 'unread' : ''}`}>
                 <div className={`notif-item-type-icon notif-type-${n.type?.split('_')[0]}`}>
@@ -190,6 +209,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
           )}
         </div>
 
+        {/* "Mark all read" footer button — only shown when there are unread items */}
         {unreadCount > 0 && (
           <div className="notif-center-footer">
             <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => { onMarkAllRead(); }}>
