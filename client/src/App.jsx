@@ -1,6 +1,16 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 import { ToastProvider } from './components/common/Toast';
 import { ConfirmProvider } from './components/common/ConfirmDialog';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -129,6 +139,7 @@ function App() {
     return children;
   };
   return (
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <LanguageProvider>
       {/* ErrorBoundary catches any unhandled JS errors in child components */}
@@ -199,6 +210,7 @@ function App() {
       </ErrorBoundary>
       </LanguageProvider>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

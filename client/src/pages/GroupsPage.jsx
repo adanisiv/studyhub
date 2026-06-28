@@ -1,34 +1,20 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
 import { useToast } from '../components/common/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useGroups, useGroupsInvalidate } from '../hooks/useGroups';
 
 function GroupsPage({ user }) {
-  const [groups, setGroups] = useState([]);
-  const [showForm, setShowForm] = useState(false); // toggles the New Group form
-  // All fields for the group creation form stored in one object for convenience
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', subject: '', year: 1, semester: 'A', department: '', isPrivate: false, tags: '' });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [joinLoading, setJoinLoading] = useState(null);
   const toast = useToast();
+  const { data: groups = [], isLoading: loading } = useGroups();
+  const invalidateGroups = useGroupsInvalidate();
   const { t } = useLanguage();
 
-  // Fetch all groups from GET /api/groups and store them in state
-  const loadGroups = async () => {
-    setLoading(true);
-    try {
-      const res = await API.get('/groups');
-      setGroups(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-    setLoading(false);
-  };
-
-  // Run loadGroups once when the component mounts
-  useEffect(() => { loadGroups(); }, []);
   // Sends form data to POST /api/groups.
   // On success: hides form, resets fields, shows toast, reloads list.
   // On error: shows the server error message below the form.
@@ -45,7 +31,7 @@ function GroupsPage({ user }) {
       setShowForm(false);
       setForm({ name: '', description: '', subject: '', year: 1, semester: 'A', department: '', isPrivate: false, tags: '' });
       toast('Group created', 'success');
-      loadGroups(); // reload the list to include the new group
+      invalidateGroups(); // reload the list to include the new group
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create group');
     }

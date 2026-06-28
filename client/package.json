@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@tanstack/react-query": "^5.101.2",
     "axios": "^1.6.7",
     "d3": "^7.9.0",
     "react": "^18.2.0",
@@ -16,5 +17,12 @@
     "build": "react-scripts build"
   },
   "proxy": "http://localhost:5000",
-  "browserslist": { "production": [">0.2%"], "development": ["last 1 chrome version"] }
+  "browserslist": {
+    "production": [
+      ">0.2%"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
+  }
 }

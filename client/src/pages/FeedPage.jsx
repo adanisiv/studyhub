@@ -1,10 +1,12 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
 import { useToast } from '../components/common/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useFeed } from '../hooks/useFeed';
 // Skeletons are placeholder elements with an animated shimmer.
 // They show while content loads, preventing layout shifts and giving visual feedback.
 
@@ -247,46 +249,33 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
   );
 }
 
-// How many posts to fetch per page for infinite scroll
-const PAGE_SIZE = 15;
-
 function FeedPage({ user }) {
   const toast = useToast();
   const { t } = useLanguage();
-  const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);          // current page number
-  const [hasMore, setHasMore] = useState(true); // false when we've loaded all pages
-  const [loadingInitial, setLoadingInitial] = useState(true); // first page loading
-  const [loadingMore, setLoadingMore] = useState(false);      // subsequent pages loading
+  const queryClient = useQueryClient();
+
+  // React Query infinite scroll — replaces manual page/posts/loading state
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingInitial,
+  } = useFeed();
+
+  // Flatten pages: each page has a `posts` array
+  const posts = data?.pages.flatMap(p => p.posts) ?? [];
+
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [trending, setTrending] = useState(null);
   const [suggestedGroups, setSuggestedGroups] = useState([]);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [joinLoading, setJoinLoading] = useState(null);     // ID of group being joined
-  const [friendLoading, setFriendLoading] = useState(null); // ID of user being friended
+  const [joinLoading, setJoinLoading] = useState(null);
+  const [friendLoading, setFriendLoading] = useState(null);
   const [sidebarLoading, setSidebarLoading] = useState(true);
-  // sentinelRef — a hidden <div> at the bottom of the post list
-  // When it becomes visible (scrolled into view), we load the next page
   const sentinelRef = useRef(null);
-  const observerRef = useRef(null); // holds the IntersectionObserver instance
-  // pageNum: which page to fetch (1 = first page, 2 = second, etc.)
-  // append: if true, add new posts to the list; if false, replace the list
-  const loadFeed = async (pageNum = 1, append = false) => {
-    if (pageNum === 1) setLoadingInitial(true);
-    else setLoadingMore(true);
-    try {
-      const res = await API.get(`/posts/feed?page=${pageNum}&limit=${PAGE_SIZE}`);
-      const { posts: newPosts = [], pages = 1 } = res.data || {};
-      // append mode: add to existing list; replace mode: start fresh
-      setPosts(prev => append ? [...prev, ...newPosts] : newPosts);
-      setHasMore(pageNum < pages); // if we're on the last page, no more to load
-    } catch (err) {
-      console.error(err);
-    }
-    if (pageNum === 1) setLoadingInitial(false);
-    else setLoadingMore(false);
-  };
+  const observerRef = useRef(null);
   // Loads all sidebar data in parallel using Promise.all.
   // Each individual request has .catch() so one failure doesn't block the rest.
   const loadSidebar = async () => {
@@ -328,21 +317,13 @@ function FeedPage({ user }) {
     setSidebarLoading(false);
   };
 
-  // Load feed and sidebar when the page mounts
-  useEffect(() => {
-    loadFeed(1, false);
-    loadSidebar();
-  }, []);
-  // handleLoadMore is wrapped in useCallback so it stays the same function reference
-  // between renders, which prevents the IntersectionObserver from being torn down
-  // and recreated unnecessarily.
+  // Load sidebar when the page mounts
+  useEffect(() => { loadSidebar(); }, []);
 
-  const handleLoadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return; // guard: don't double-fetch
-    const nextPage = page + 1;
-    setPage(nextPage);
-    await loadFeed(nextPage, true); // append = true: add to existing list
-  }, [loadingMore, hasMore, page]);
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -396,8 +377,7 @@ function FeedPage({ user }) {
       <div className="feed-layout">
         {/* Main feed column */}
         <main>
-          {/* Post creation form — on submit, reload from page 1 */}
-          <PostForm onCreated={() => { setPage(1); loadFeed(1, false); }} />
+          <PostForm onCreated={() => queryClient.invalidateQueries({ queryKey: ['feed'] })} />
 
           {loadingInitial ? (
             /* Show 3 skeleton cards while the first page loads */
@@ -429,8 +409,8 @@ function FeedPage({ user }) {
                   key={post._id}
                   post={post}
                   currentUserId={user._id}
-                  onUpdate={() => loadFeed(1, false)} // reload from page 1 after edit
-                  onDelete={() => loadFeed(1, false)} // reload from page 1 after delete
+                  onUpdate={() => queryClient.invalidateQueries({ queryKey: ['feed'] })}
+                  onDelete={() => queryClient.invalidateQueries({ queryKey: ['feed'] })}
                 />
               ))}
 
@@ -438,15 +418,14 @@ function FeedPage({ user }) {
                   IntersectionObserver fires handleLoadMore when this element enters the viewport. */}
               <div ref={sentinelRef} className="infinite-sentinel" aria-hidden="true" />
 
-              {/* Loading spinner shown between pages */}
-              {loadingMore && (
+              {isFetchingNextPage && (
                 <div className="load-more-spinner">
                   <span className="btn-spinner" />
                   {t('loadingMore')}
                 </div>
               )}
 
-              {!hasMore && posts.length > 0 && (
+              {!hasNextPage && posts.length > 0 && (
                 <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
                   {t('seenAllPosts')}
                 </div>

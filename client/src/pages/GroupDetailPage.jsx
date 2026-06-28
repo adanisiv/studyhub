@@ -6,48 +6,29 @@ import PostForm from '../components/common/PostForm';
 import { useToast } from '../components/common/Toast';
 import { useConfirm } from '../components/common/ConfirmDialog';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useGroup, useGroupPosts, useGroupInvalidate } from '../hooks/useGroup';
 
 function GroupDetailPage({ user }) {
-  // useParams extracts the :id segment from the URL (e.g. /groups/abc123)
   const { id } = useParams();
-  // useNavigate allows programmatic redirects (e.g. after deleting the group)
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
   const { t } = useLanguage();
 
-  const [group, setGroup] = useState(null);       // group object from the API
-  const [posts, setPosts] = useState([]);          // posts belonging to this group
-  const [editing, setEditing] = useState(false);  // whether the edit form is open
-  const [editForm, setEditForm] = useState({});   // fields for the edit form
-  const [error, setError] = useState('');
-  const [approveLoading, setApproveLoading] = useState(null); // ID of member being approved
-  const [actionLoading, setActionLoading] = useState(false);  // for leave/delete actions
+  const [activeTab, setActiveTab] = useState('posts'); // 'posts' | 'resources'
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [approveLoading, setApproveLoading] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Fetch the group data from GET /api/groups/:id
-  const loadGroup = async () => {
-    try {
-      const res = await API.get(`/groups/${id}`);
-      setGroup(res.data);
-      // Pre-fill the edit form with current values
-      setEditForm({ name: res.data.name, description: res.data.description, subject: res.data.subject });
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load group');
-    }
-  };
+  const { data: group, isLoading: groupLoading, error: groupError } = useGroup(id);
+  const { data: posts = [] } = useGroupPosts(id);
+  const invalidate = useGroupInvalidate();
 
-  // Fetch posts for this group from GET /api/posts/group/:id
-  const loadPosts = async () => {
-    try {
-      const res = await API.get(`/posts/group/${id}`);
-      setPosts(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Load both group data and posts when the page mounts, or when :id changes
-  useEffect(() => { loadGroup(); loadPosts(); }, [id]);
+  // Pre-fill edit form whenever group data loads
+  useEffect(() => {
+    if (group) setEditForm({ name: group.name, description: group.description, subject: group.subject });
+  }, [group]);
 
   // Derived flags: is the current user the group admin? is the user a member?
   // group?.admin may be a full object or just an ID string depending on populate depth
@@ -59,7 +40,7 @@ function GroupDetailPage({ user }) {
     try {
       await API.post(`/groups/${id}/approve`, { userId });
       toast('Member approved', 'success');
-      loadGroup(); // reload to move the user from pendingRequests → members
+      invalidate(id); // reload to move the user from pendingRequests → members
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
     }
@@ -95,24 +76,24 @@ function GroupDetailPage({ user }) {
       await API.put(`/groups/${id}`, editForm);
       setEditing(false);
       toast('Group updated', 'success');
-      loadGroup(); // reload to show the updated name/description
+      invalidate(id); // reload to show the updated name/description
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
-  // Error state: shown if the group could not be loaded (e.g. 404, 403)
-  if (error) return (
+  // Error state
+  if (groupError) return (
     <div className="empty-state">
       <div className="empty-state-icon">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
       </div>
-      <div className="empty-state-title" style={{ color: 'var(--error)' }}>{error}</div>
+      <div className="empty-state-title" style={{ color: 'var(--error)' }}>{groupError.response?.data?.error || 'Failed to load group'}</div>
     </div>
   );
 
   // Loading state: skeleton while waiting for the API response
-  if (!group) return (
+  if (groupLoading) return (
     <div>
       <div className="skeleton-card" style={{ height: 120 }}>
         <div className="skeleton skeleton-text" style={{ width: '40%', height: 24 }} />
@@ -232,22 +213,100 @@ function GroupDetailPage({ user }) {
         </div>
       </div>
 
-      {/* ── Group posts ─────────────────────────────────────────────────── */}
-      {/* PostForm is only shown to members — groupId ties new posts to this group */}
-      {isMember && <PostForm groupId={id} onCreated={loadPosts} />}
+      {/* ── Tabs: Posts / Resources ─────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 'var(--space-1)', borderBottom: '2px solid var(--border)', marginBottom: 'var(--space-4)' }}>
+        {['posts', 'resources'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: 'var(--space-2) var(--space-4)',
+              fontSize: 'var(--text-sm)', fontWeight: 600,
+              color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)',
+              borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+              marginBottom: -2, transition: 'color 0.15s',
+            }}
+          >
+            {tab === 'posts' ? t('posts') : t('resourcesTab')}
+            {tab === 'resources' && posts.filter(p => p.mediaUrl).length > 0 && (
+              <span className="section-count" style={{ marginLeft: 6 }}>
+                {posts.filter(p => p.mediaUrl).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
-      {/* Empty state for members who haven't posted yet */}
-      {posts.length === 0 && isMember && (
-        <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
-          <div className="empty-state-text">{t('noGroupPosts')}</div>
-        </div>
+      {/* ── Posts tab ───────────────────────────────────────────────────── */}
+      {activeTab === 'posts' && (
+        <>
+          {isMember && <PostForm groupId={id} onCreated={() => invalidate(id)} />}
+          {posts.length === 0 && isMember && (
+            <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
+              <div className="empty-state-text">{t('noGroupPosts')}</div>
+            </div>
+          )}
+          {posts.map(post => (
+            <PostCard key={post._id} post={post} currentUserId={user._id}
+              onUpdate={() => invalidate(id)} onDelete={() => invalidate(id)} />
+          ))}
+        </>
       )}
 
-      {/* Render each group post */}
-      {posts.map(post => (
-        <PostCard key={post._id} post={post} currentUserId={user._id}
-          onUpdate={loadPosts} onDelete={loadPosts} />
-      ))}
+      {/* ── Resources tab ───────────────────────────────────────────────── */}
+      {activeTab === 'resources' && (() => {
+        const resources = posts.filter(p => p.mediaUrl);
+        if (resources.length === 0) return (
+          <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.5" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
+            </svg>
+            <div className="empty-state-text" style={{ marginTop: 'var(--space-3)' }}>{t('noResourcesYet')}</div>
+          </div>
+        );
+        return (
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {resources.map((post, i) => (
+              <a
+                key={post._id}
+                href={post.mediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                  padding: 'var(--space-3) var(--space-5)',
+                  borderBottom: i < resources.length - 1 ? '1px solid var(--border-light)' : 'none',
+                  textDecoration: 'none', color: 'inherit',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  {post.mediaType === 'image'
+                    ? <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></>
+                    : post.mediaType === 'video'
+                    ? <><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>
+                    : <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></>
+                  }
+                </svg>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {post.mediaOriginalName || post.mediaUrl.split('/').pop()}
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                    {post.author?.name} · {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+              </a>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }

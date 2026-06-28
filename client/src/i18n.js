@@ -219,6 +219,8 @@ export const translations = {
     approve: 'Approve',
     approving: 'Approving...',
     noGroupPosts: 'No posts yet in this group. Start the conversation!',
+    resourcesTab: 'Resources',
+    noResourcesYet: 'No files have been uploaded in this group yet.',
   },
 
   he: {
@@ -439,5 +441,7 @@ export const translations = {
     approve: 'אשר',
     approving: 'מאשר...',
     noGroupPosts: 'אין פוסטים עדיין בקבוצה זו. התחל את השיחה!',
+    resourcesTab: 'חומרים',
+    noResourcesYet: 'אין קבצים שהועלו בקבוצה זו עדיין.',
   },
 };
