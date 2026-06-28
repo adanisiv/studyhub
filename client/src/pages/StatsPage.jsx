@@ -420,14 +420,8 @@ function StatsPage() {
 
       {/* ── Chart 1: Daily activity line chart (full width) ──────────────── */}
       <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
-          <div>
-            <h2 className="section-title" style={{ marginBottom: 4 }}>{t('dailyActivity')}</h2>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 0 }}>
-              Each point = how many posts were published on that day.
-              A spike means students were very active. A flat line means no posts that day.
-            </p>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+          <h2 className="section-title" style={{ margin: 0 }}>{t('dailyActivity')}</h2>
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', background: 'var(--bg-hover)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', whiteSpace: 'nowrap' }}>
             Last 30 days
           </span>
@@ -437,47 +431,54 @@ function StatsPage() {
         ) : (
           <div ref={lineRef} />
         )}
+        {/* Caption appears AFTER the chart so the user can relate the text to what they see */}
+        {!loading && (
+          <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>How to read this chart:</strong> the horizontal axis is dates (last 30 days). The vertical axis is the number of posts. A high peak on a date = many posts were shared that day. Days with no dot = zero posts.
+          </div>
+        )}
       </div>
 
       {/* ── Charts 2 & 3: Bar + Donut side by side ──────────────────────── */}
       <div className="charts-grid">
         {/* Bar chart */}
         <div className="card">
-          <h2 className="section-title" style={{ marginBottom: 4 }}>{t('postsPerMonth')}</h2>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)', lineHeight: 1.5 }}>
-            Each bar = total posts published in that calendar month.
-            Taller bar = more activity that month.
-          </p>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>{t('postsPerMonth')}</h2>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
           ) : (
             <div ref={barRef} />
           )}
+          {!loading && (
+            <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+              <strong style={{ color: 'var(--text-secondary)' }}>How to read:</strong> each vertical bar is one month. The number on top of each bar tells you exactly how many posts were shared that month. The higher the bar, the busier that month was.
+            </div>
+          )}
         </div>
 
         {/* Donut chart */}
         <div className="card">
-          <h2 className="section-title" style={{ marginBottom: 4 }}>{t('postTypes')}</h2>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)', lineHeight: 1.5 }}>
-            What kinds of posts students share — questions, study materials, or announcements.
-            The number in the centre is the total.
-          </p>
+          <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>{t('postTypes')}</h2>
           {loading ? (
             <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
           ) : (
             <>
               <div ref={pieRef} />
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-3)', flexWrap: 'wrap' }}>
+              {/* Legend */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {[
-                  { color: '#f59e0b', label: t('questions'), desc: 'Students asking for help' },
-                  { color: '#6366f1', label: t('studyMaterials'), desc: 'Notes, files, resources' },
-                  { color: '#f93a5b', label: t('announcements'), desc: 'Group announcements' },
-                ].map(({ color, label, desc }) => (
-                  <span key={label} title={desc} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', cursor: 'default' }}>
+                  { color: '#f59e0b', label: t('questions') },
+                  { color: '#6366f1', label: t('studyMaterials') },
+                  { color: '#f93a5b', label: t('announcements') },
+                ].map(({ color, label }) => (
+                  <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                     <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: 'inline-block', flexShrink: 0 }} />
                     {label}
                   </span>
                 ))}
+              </div>
+              <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+                <strong style={{ color: 'var(--text-secondary)' }}>How to read:</strong> each coloured slice is a post type. The bigger the slice, the more posts of that type. The number in the centre of the circle is the total number of posts.
               </div>
             </>
           )}
