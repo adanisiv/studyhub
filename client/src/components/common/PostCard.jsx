@@ -233,21 +233,30 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
 
       {/* ── Action bar ───────────────────────────────────────────────── */}
       <div className="post-actions">
-        {/* Like button: heart toggles like; count opens "who liked" modal */}
-        <button className={`post-action-btn ${liked ? 'liked' : ''}`} onClick={handleLike} aria-label={liked ? 'Unlike post' : 'Like post'}>
-          <svg viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-        </button>
-        <button
-          className="post-action-btn"
-          onClick={handleShowLikes}
-          disabled={likes === 0}
-          aria-label={`${likes} likes — click to see who liked this`}
-          style={{ paddingLeft: 2, marginLeft: -6, cursor: likes === 0 ? 'default' : 'pointer', opacity: likes === 0 ? 0.5 : 1 }}
-        >
-          {likes}
-        </button>
+        {/* Heart + count: one combined pill. Heart click = like/unlike. Count click = open modal. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <button
+            className={`post-action-btn ${liked ? 'liked' : ''}`}
+            onClick={handleLike}
+            aria-label={liked ? 'Unlike post' : 'Like post'}
+          >
+            <svg viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+          </button>
+          {likes > 0 ? (
+            <button
+              className="post-action-btn"
+              onClick={handleShowLikes}
+              aria-label={`${likes} likes — click to see who liked this`}
+              style={{ fontWeight: 600, fontSize: 'var(--text-xs)', color: 'var(--accent)', textDecoration: 'underline', textUnderlineOffset: 2, padding: '0 4px' }}
+            >
+              {likes}
+            </button>
+          ) : (
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', padding: '0 4px' }}>0</span>
+          )}
+        </div>
 
         {/* Comment count button — toggles the comments section */}
         <button className="post-action-btn" onClick={() => setShowComments(!showComments)} aria-label={`${post.comments?.length || 0} comments`} aria-expanded={showComments}>
