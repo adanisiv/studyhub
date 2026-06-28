@@ -233,12 +233,13 @@ exports.trending = async (req, res) => {
     const currentUser = await User.findById(req.userId).select('department friends');
     const userDept = currentUser?.department || '';
 
-    // Find groups in the user's department to scope trending tags
-    const deptGroups = await Group.find({ department: userDept }).select('_id');
+    // Case-insensitive department match (handles "Computer science" vs "Computer Science")
+    const deptRegex = new RegExp(`^${userDept.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
+    const deptGroups = await Group.find({ department: deptRegex }).select('_id');
     const deptGroupIds = deptGroups.map(g => g._id);
 
-    // Authors in same department
-    const deptAuthors = await User.find({ department: userDept }).select('_id');
+    const deptAuthors = await User.find({ department: deptRegex }).select('_id');
     const deptAuthorIds = deptAuthors.map(u => u._id);
 
     const [tags, groups] = await Promise.all([

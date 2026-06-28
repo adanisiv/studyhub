@@ -98,9 +98,14 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               {t('stats')}
             </Link>
             <Link to={`/profile/${user._id}`} className="nav-user-btn" aria-label={`Profile for ${user.name}`}>
-              <span className="nav-user-avatar" aria-hidden="true" style={{ overflow: 'hidden', padding: 0 }}>
+              <span className="nav-user-avatar" aria-hidden="true" style={{ overflow: 'hidden', padding: 0, background: user.avatar ? 'transparent' : undefined }}>
                 {user.avatar
-                  ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ? <img
+                      src={user.avatar}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                      onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.textContent = initial; e.currentTarget.parentElement.style.background = ''; }}
+                    />
                   : initial
                 }
               </span>
