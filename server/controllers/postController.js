@@ -354,16 +354,3 @@ exports.toggleLike = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// Returns the list of users who liked a post (name + _id only).
-// Used by the client-side "Likes" modal in PostCard.
-exports.getLikes = async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id)
-      .populate('likes', 'name _id');
-    if (!post) return res.status(404).json({ error: 'Post not found' });
-    res.json(post.likes);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};

@@ -45,7 +45,7 @@ function GroupsPage({ user }) {
     try {
       const res = await API.post(`/groups/${groupId}/join`);
       toast(res.data.message, 'success'); // server tells the user what happened
-      loadGroups(); // reload to reflect updated membership
+      invalidateGroups(); // reload to reflect updated membership
     } catch (err) {
       toast(err.response?.data?.error || 'Failed to join', 'error');
     }
