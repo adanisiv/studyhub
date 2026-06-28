@@ -81,7 +81,9 @@ app.post('/api/upload', auth, upload.single('media'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   // Build a publicly accessible URL for the uploaded file
-  const url = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
+  const host = req.get('host') || `localhost:${process.env.PORT || 5000}`;
+  const proto = req.protocol || 'http';
+  const url = `${proto}://${host}/uploads/${req.file.filename}`;
 
   // Determine the type of media based on MIME type
   let mediaType = 'file';                                  // default: generic file (PDF, DOCX, etc.)

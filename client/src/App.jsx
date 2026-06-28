@@ -56,7 +56,19 @@ function App() {
   // The user object is saved to localStorage by the login() function below.
   useEffect(() => {
     const saved = localStorage.getItem('user');
-    if (saved) setUser(JSON.parse(saved));
+    const token = localStorage.getItem('token');
+    if (saved && token) {
+      setUser(JSON.parse(saved));
+      // Refresh user profile from server so avatar/name are always up-to-date
+      API.get('/users/me').then(res => {
+        const fresh = res.data;
+        setUser(prev => {
+          const next = { ...prev, ...fresh };
+          localStorage.setItem('user', JSON.stringify(next));
+          return next;
+        });
+      }).catch(() => {});
+    }
   }, []);
   // Create a socket connection when the user logs in, disconnect when they log out.
   // The JWT is sent in the handshake auth so the server can verify who's connecting.

@@ -148,8 +148,13 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
 
       {/* ── Post header: avatar, author name, date, group ─────────────── */}
       <div className="post-header">
-        {/* Colored letter avatar — color chosen by author name hash */}
-        <div className={`avatar ${AVATAR_COLORS[colorIdx]}`} aria-hidden="true">{initial}</div>
+        {post.author?.avatar
+          ? <div className="avatar" aria-hidden="true" style={{ overflow: 'hidden', padding: 0 }}>
+              <img src={post.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.textContent = initial; }} />
+            </div>
+          : <div className={`avatar ${AVATAR_COLORS[colorIdx]}`} aria-hidden="true">{initial}</div>
+        }
         <div className="post-author-info">
           {/* Author name links to their profile page */}
           <Link to={`/profile/${post.author?._id}`} className="post-author-name">

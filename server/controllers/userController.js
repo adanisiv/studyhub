@@ -11,6 +11,17 @@ const notify = async (req, recipientId, data) => {
   if (io) io.to(`user_${recipientId}`).emit('new_notification', populated);
 };
 
+// Returns the currently logged-in user's own fresh profile (used on app load to sync localStorage).
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('name email department year avatar role');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Returns all users EXCEPT the logged-in user (so you can't add yourself as a friend).
 // Only returns the fields needed for the UI; password is always excluded by toJSON().
 exports.list = async (req, res) => {
