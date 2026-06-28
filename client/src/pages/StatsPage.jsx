@@ -10,6 +10,9 @@ function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null); // platform-wide KPIs
   const [typeData, setTypeData] = useState([]);
+  // Chart data stored in state so D3 can draw AFTER refs are mounted
+  const [monthData, setMonthData] = useState([]);
+  const [dailyData, setDailyData] = useState([]);
 
   const barRef = useRef(null);
   const pieRef = useRef(null);
@@ -19,11 +22,12 @@ function StatsPage() {
     API.get('/groups').then(res => {
       setGroups(Array.isArray(res.data) ? res.data : []);
     }).catch(console.error);
-    // Load platform-wide KPIs (users, groups, posts this week, new members)
     API.get('/stats/dashboard').then(res => setDashboard(res.data)).catch(console.error);
   }, []);
 
-  // Fetches chart data and redraws all three D3 charts when selectedGroup changes.
+  // Fetch data only — store in state, don't draw yet.
+  // Drawing happens in a separate useEffect after loading=false unmounts skeletons
+  // and mounts the real ref divs.
   const loadCharts = useCallback(async () => {
     setLoading(true);
     const params = selectedGroup ? { groupId: selectedGroup } : {};
@@ -33,10 +37,9 @@ function StatsPage() {
         API.get('/stats/post-types', { params }),
         API.get('/stats/daily-activity', { params })
       ]);
+      setMonthData(monthRes.data || []);
       setTypeData(typeRes.data || []);
-      drawBarChart(monthRes.data || []);
-      drawPieChart(typeRes.data || []);
-      drawLineChart(dailyRes.data || []);
+      setDailyData(dailyRes.data || []);
     } catch (err) {
       console.error(err);
     }
@@ -44,6 +47,16 @@ function StatsPage() {
   }, [selectedGroup]);
 
   useEffect(() => { loadCharts(); }, [loadCharts]);
+
+  // Draw charts only after loading=false so the ref divs are actually mounted in the DOM.
+  // Without this separation, drawBarChart/drawPieChart/drawLineChart run while
+  // the skeleton placeholders are rendered and all three refs are null.
+  useEffect(() => {
+    if (loading) return;
+    drawBarChart(monthData);
+    drawPieChart(typeData);
+    drawLineChart(dailyData);
+  }, [loading, monthData, typeData, dailyData]);
 
   // D3 can't read CSS variables — read concrete color values from the theme attribute
   const getChartColors = () => {
