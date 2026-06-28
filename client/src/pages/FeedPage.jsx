@@ -292,10 +292,17 @@ function FeedPage({ user }) {
       setStatsLoading(false);
       setTrending(trendingRes.data);
 
-      // Suggested groups: filter out groups the user is already a member of
+      // Suggested groups: filter out groups the user is already a member of,
+      // then sort so groups from the user's own department appear first
       const allGroups = Array.isArray(groupsRes.data) ? groupsRes.data : [];
       const nonMember = allGroups.filter(g => !g.members?.some(m => String(m._id || m) === String(user._id)));
-      setSuggestedGroups(nonMember.slice(0, 3)); // show at most 3
+      const userDept = (user.department || '').toLowerCase();
+      nonMember.sort((a, b) => {
+        const aMatch = (a.department || '').toLowerCase() === userDept ? -1 : 0;
+        const bMatch = (b.department || '').toLowerCase() === userDept ? -1 : 0;
+        return aMatch - bMatch;
+      });
+      setSuggestedGroups(nonMember.slice(0, 3));
 
       // Suggested users: filter out self and existing friends.
       // We fetch the user's own profile fresh from the API so the friends list is
