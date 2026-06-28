@@ -263,12 +263,21 @@ function StatsPage() {
   const topType = typeData.length > 0 ? typeData.reduce((a, b) => a.count > b.count ? a : b).type : null;
   const typeLabels = { question: t('questions'), material: t('studyMaterials'), announcement: t('announcements') };
 
+  const selectedGroupName = selectedGroup
+    ? groups.find(g => g._id === selectedGroup)?.name || t('allGroups')
+    : t('allGroups');
+
   return (
     <div>
-      <h1 className="page-title">{t('statsDashboard')}</h1>
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 'var(--space-5)' }}>
+        <h1 className="page-title" style={{ marginBottom: 4 }}>{t('statsDashboard')}</h1>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
+          Platform-wide numbers for all students and groups on StudyHub
+        </p>
+      </div>
 
       {/* ── Platform-wide KPI cards ─────────────────────────────────────── */}
-      {/* Four high-level numbers showing overall platform health */}
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#6366f1' }}>
@@ -279,6 +288,9 @@ function StatsPage() {
           </div>
           <div className="kpi-value">{dashboard?.totalUsers ?? '–'}</div>
           <div className="kpi-label">{t('totalStudents')}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+            Registered accounts on the platform
+          </div>
         </div>
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#f93a5b' }}>
@@ -288,6 +300,9 @@ function StatsPage() {
           </div>
           <div className="kpi-value">{dashboard?.activeGroups ?? '–'}</div>
           <div className="kpi-label">{t('studyGroups')}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+            Total groups created by all students
+          </div>
         </div>
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#f59e0b' }}>
@@ -298,6 +313,9 @@ function StatsPage() {
           </div>
           <div className="kpi-value">{dashboard?.postsThisWeek ?? '–'}</div>
           <div className="kpi-label">{t('postsThisWeek')}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+            Posts published in the last 7 days
+          </div>
         </div>
         <div className="kpi-card">
           <div className="kpi-icon" style={{ color: '#10b981' }}>
@@ -308,54 +326,104 @@ function StatsPage() {
           </div>
           <div className="kpi-value">{dashboard?.newMembers ?? '–'}</div>
           <div className="kpi-label">{t('newMembers')}</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+            Students who joined in the last 30 days
+          </div>
         </div>
       </div>
 
-      {/* ── Group filter + content summary ──────────────────────────────── */}
+      {/* ── Chart scope selector ─────────────────────────────────────────── */}
       <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-              {t('filterByGroup')}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+          {/* Left: label + explanation */}
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" aria-hidden="true">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+              </svg>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Filter charts by group
+              </span>
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-              {t('filterDesc')}
-            </div>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.5 }}>
+              The charts below show data for <strong style={{ color: 'var(--text-secondary)' }}>{selectedGroupName}</strong>.
+              Pick a specific group from the list to zoom in on just that group's activity.
+            </p>
           </div>
-          <select
-            className="form-input"
-            style={{ width: 'auto', minWidth: 200 }}
-            value={selectedGroup}
-            onChange={e => setSelectedGroup(e.target.value)}
-          >
-            <option value="">{t('allGroups')}</option>
-            {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
-          </select>
+          {/* Right: dropdown */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 220 }}>
+            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Viewing data for:
+            </label>
+            <select
+              className="form-input"
+              style={{ width: '100%' }}
+              value={selectedGroup}
+              onChange={e => setSelectedGroup(e.target.value)}
+            >
+              <option value="">All groups (entire platform)</option>
+              {groups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
+            </select>
+          </div>
         </div>
 
-        {/* Mini summary of what the charts show */}
+        {/* What the charts are currently showing */}
         {!loading && (
           <div style={{
-            display: 'flex', gap: 'var(--space-5)', marginTop: 'var(--space-4)',
+            display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)',
             paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-light)',
             flexWrap: 'wrap',
           }}>
-            <div>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('showingPosts')}</span>
-              <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>{totalChartPosts}</div>
-            </div>
-            {topType && (
+            {/* Scope pill */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)',
+              padding: '10px 16px', flex: 1, minWidth: 180,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
               <div>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('mostCommonType')}</span>
-                <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>{typeLabels[topType] || topType}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Showing data for</div>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {selectedGroupName}
+                </div>
+              </div>
+            </div>
+            {/* Post count pill */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)',
+              padding: '10px 16px', flex: 1, minWidth: 180,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Total posts in view</div>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {totalChartPosts} posts
+                </div>
+              </div>
+            </div>
+            {/* Top type pill */}
+            {topType && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)',
+                padding: '10px 16px', flex: 1, minWidth: 180,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" aria-hidden="true">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                </svg>
+                <div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Most common post type</div>
+                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {typeLabels[topType] || topType}
+                  </div>
+                </div>
               </div>
             )}
-            <div>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('scope')}</span>
-              <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {selectedGroup ? groups.find(g => g._id === selectedGroup)?.name || t('allGroups') : t('allGroups')}
-              </div>
-            </div>
           </div>
         )}
       </div>
