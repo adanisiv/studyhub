@@ -2557,3 +2557,64 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   flex-direction: row-reverse;
 }
 
+/* ── תיקון קריאות: צבע מלל כהה בתוך חלונית ההתראות ── */
+.notif-center-panel .notif-item-message,
+.notif-center-panel .notif-item-content,
+.notif-center-panel .notif-item-message * {
+  color: #1a202c !important; /* צבע כהה וברור */
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+/* הבלטת המלל כשההתראה עדיין לא נקראה (Unread) */
+.notif-center-panel .notif-item.unread .notif-item-message {
+  color: #000000 !important; /* שחור מודגש */
+  font-weight: 600 !important;
+}
+
+/* צבע המלל של זמן ההתראה (למשל: just now) */
+.notif-center-panel .notif-item-time {
+  color: #718096 !important; 
+  font-size: 12px !important;
+  margin-top: 4px !important;
+  display: block !important;
+}
+
+/* ===================================================================
+   תיקון קריאות מוחלט עבור ה-Dropdown של הפעמון (מצב בהיר/כהה)
+   =================================================================== */
+
+/* יחייב את כל הטקסטים בתוך פריט התראה בתוך הפעמון להיות כהים וקריאים */
+.notification-dropdown .notification-item,
+.notification-dropdown .notification-item *,
+.notification-dropdown .notif-content,
+.notification-dropdown .notif-content * {
+  color: #0f172a !important; /* אפור כהה מאוד, קריא לחלוטין */
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* הדגשה מוחלטת של שמות המשתמשים (כמו דנה כהן) בתוך ההתראה */
+.notification-dropdown .notification-item strong,
+.notification-dropdown .notification-item b,
+.notification-dropdown .notification-item span {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* תיקון צבע המלל של זמן ההתראה (just now, 6d ago) */
+.notification-dropdown .notif-time {
+  color: #475569 !important; /* אפור ברור */
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  display: block !important;
+  margin-top: 2px !important;
+}
+
+/* תיקון כותרת החלונית העליונה של הפעמון */
+.notification-dropdown .notification-header,
+.notification-dropdown .notification-header * {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
