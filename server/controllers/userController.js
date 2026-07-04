@@ -11,6 +11,17 @@ const notify = async (req, recipientId, data) => {
   if (io) io.to(`user_${recipientId}`).emit('new_notification', populated);
 };
 
+// Returns the currently logged-in user's own fresh profile (used on app load to sync localStorage).
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('name email department year avatar role');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Returns all users EXCEPT the logged-in user (so you can't add yourself as a friend).
 // Only returns the fields needed for the UI; password is always excluded by toJSON().
 exports.list = async (req, res) => {
@@ -31,9 +42,17 @@ exports.search = async (req, res) => {
     const filter = {};
 
     if (req.query.name) {
-      // Escape special regex characters to prevent ReDoS (denial of service via regex)
-      const escaped = req.query.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.name = { $regex: escaped, $options: 'i' }; // case-insensitive match
+      const raw = req.query.name.trim();
+      // Build a fuzzy subsequence pattern: each character in the query may have
+      // any characters between it and the next one.
+      // e.g. "dn"  → /d.*n/i  — matches "Dan", "Dean", "Donald"
+      //      "siv" → /s.*i.*v/i — matches "Sivan", "Silvio"
+      // Each character is escaped individually before joining so special chars are safe.
+      const fuzzyPattern = raw
+        .split('')
+        .map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*');
+      filter.name = { $regex: fuzzyPattern, $options: 'i' };
     }
 
     if (req.query.department) {
@@ -42,7 +61,7 @@ exports.search = async (req, res) => {
     }
 
     if (req.query.year) {
-      filter.year = Number(req.query.year); // exact match for year (1, 2, 3, or 4)
+      filter.year = Number(req.query.year);
     }
 
     // Always exclude the logged-in user from search results

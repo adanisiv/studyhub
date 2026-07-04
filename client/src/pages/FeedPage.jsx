@@ -1,9 +1,12 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import API from '../api/axios';
 import PostCard from '../components/common/PostCard';
 import PostForm from '../components/common/PostForm';
 import { useToast } from '../components/common/Toast';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useFeed } from '../hooks/useFeed';
 // Skeletons are placeholder elements with an animated shimmer.
 // They show while content loads, preventing layout shifts and giving visual feedback.
 
@@ -60,11 +63,11 @@ function SkeletonSidebar() {
 // posts this week, and new members. Data comes from GET /api/stats/dashboard.
 
 function DashboardCards({ stats, loading }) {
-  // Define the 4 cards with their labels, values, and icons
+  const { t } = useLanguage();
   const cards = [
     {
-      label: 'Total Users',
-      value: stats?.totalUsers ?? '–', // '–' while loading or if server returns null
+      label: t('totalUsers'),
+      value: stats?.totalUsers ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -73,7 +76,7 @@ function DashboardCards({ stats, loading }) {
       ),
     },
     {
-      label: 'Active Groups',
+      label: t('activeGroups'),
       value: stats?.activeGroups ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -83,7 +86,7 @@ function DashboardCards({ stats, loading }) {
       ),
     },
     {
-      label: 'Posts This Week',
+      label: t('postsThisWeek'),
       value: stats?.postsThisWeek ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -92,7 +95,7 @@ function DashboardCards({ stats, loading }) {
       ),
     },
     {
-      label: 'New Members',
+      label: t('newMembers'),
       value: stats?.newMembers ?? '–',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -130,50 +133,47 @@ function DashboardCards({ stats, loading }) {
 //   • People You May Know — users who are not yet friends (add button)
 
 function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAddFriend, friendLoading }) {
+  const { t } = useLanguage();
   return (
     <aside className="feed-sidebar" aria-label="Sidebar">
 
-      {/* Trending Tags */}
       <div className="sidebar-card">
         <div className="sidebar-card-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
           </svg>
-          Trending Tags
+          {t('trendingTags')}
         </div>
         {trending?.tags?.length > 0 ? (
           <div className="trending-tags">
-            {trending.tags.map(t => (
+            {trending.tags.map(tag => (
               <Link
-                key={t.tag}
-                to={`/tag/${encodeURIComponent(t.tag)}`}
+                key={tag.tag}
+                to={`/tag/${encodeURIComponent(tag.tag)}`}
                 className="trending-tag"
-                title={`See everything tagged #${t.tag}`}
+                title={`#${tag.tag}`}
               >
-                #{t.tag}
-                {/* Post count badge next to each tag */}
-                <span className="trending-tag-count">{t.count}</span>
+                #{tag.tag}
+                <span className="trending-tag-count">{tag.count}</span>
               </Link>
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>No trending tags yet</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('noTrendingTags')}</p>
         )}
       </div>
 
-      {/* Popular Groups — ranked list with member counts */}
       <div className="sidebar-card">
         <div className="sidebar-card-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
           </svg>
-          Popular Groups
+          {t('popularGroups')}
         </div>
         {trending?.groups?.length > 0 ? (
           <div>
             {trending.groups.map((g, i) => (
               <Link key={g._id} to={`/groups/${g._id}`} className="trending-group-item">
-                {/* Rank number (1, 2, 3…) */}
                 <span className="trending-group-rank">{i + 1}</span>
                 <span className="trending-group-name">{g.name}</span>
                 <span className="trending-group-members">
@@ -186,65 +186,60 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>No groups yet</p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{t('noGroupsYet')}</p>
         )}
       </div>
 
-      {/* Suggested Groups — only shown if there are groups the user hasn't joined */}
       {groups?.length > 0 && (
         <div className="sidebar-card">
           <div className="sidebar-card-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
             </svg>
-            Suggested Groups
+            {t('suggestedGroups')}
           </div>
           {groups.map(g => (
             <div key={g._id} className="suggested-item">
-              {/* Letter avatar (first letter of group name) */}
               <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>{g.name?.charAt(0)}</div>
               <div className="suggested-item-info">
                 <Link to={`/groups/${g._id}`} className="suggested-item-name">{g.name}</Link>
-                <div className="suggested-item-meta">{g.members?.length || 0} members</div>
+                <div className="suggested-item-meta">{g.members?.length || 0} {t('members')}</div>
               </div>
-              {/* Join button — shows spinner while the join request is pending */}
               <button
                 className="btn btn-outline btn-small"
                 style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
                 onClick={() => onJoin(g._id)}
                 disabled={joinLoading === g._id}
               >
-                {joinLoading === g._id ? <span className="btn-spinner" /> : 'Join'}
+                {joinLoading === g._id ? <span className="btn-spinner" /> : t('join')}
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* People You May Know — users who are not yet friends */}
       {users?.length > 0 && (
         <div className="sidebar-card">
           <div className="sidebar-card-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>
             </svg>
-            People You May Know
+            {t('suggestedFriends')}
           </div>
           {users.map(u => (
             <div key={u._id} className="suggested-item">
               <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>{u.name?.charAt(0)}</div>
               <div className="suggested-item-info">
                 <Link to={`/profile/${u._id}`} className="suggested-item-name">{u.name}</Link>
-                <div className="suggested-item-meta">{u.department || 'Student'} · Year {u.year}</div>
+                <div className="suggested-item-meta">{u.department || t('studentLabel')} · {t('year')} {u.year}</div>
               </div>
-              {/* Add Friend button — shows spinner while request is pending */}
               <button
                 className="btn btn-primary btn-small"
                 style={{ fontSize: 11, padding: '4px 10px', flexShrink: 0 }}
                 onClick={() => onAddFriend(u._id)}
                 disabled={friendLoading === u._id}
               >
-                {friendLoading === u._id ? <span className="btn-spinner" /> : '+ Add'}
+                {friendLoading === u._id ? <span className="btn-spinner" /> : `+ ${t('addFriend')}`}
               </button>
             </div>
           ))}
@@ -254,45 +249,33 @@ function FeedSidebar({ user, trending, groups, users, joinLoading, onJoin, onAdd
   );
 }
 
-// How many posts to fetch per page for infinite scroll
-const PAGE_SIZE = 15;
-
 function FeedPage({ user }) {
   const toast = useToast();
-  const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);          // current page number
-  const [hasMore, setHasMore] = useState(true); // false when we've loaded all pages
-  const [loadingInitial, setLoadingInitial] = useState(true); // first page loading
-  const [loadingMore, setLoadingMore] = useState(false);      // subsequent pages loading
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  // React Query infinite scroll — replaces manual page/posts/loading state
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingInitial,
+  } = useFeed();
+
+  // Flatten pages: each page has a `posts` array
+  const posts = data?.pages.flatMap(p => p.posts) ?? [];
+
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [trending, setTrending] = useState(null);
   const [suggestedGroups, setSuggestedGroups] = useState([]);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [joinLoading, setJoinLoading] = useState(null);     // ID of group being joined
-  const [friendLoading, setFriendLoading] = useState(null); // ID of user being friended
+  const [joinLoading, setJoinLoading] = useState(null);
+  const [friendLoading, setFriendLoading] = useState(null);
   const [sidebarLoading, setSidebarLoading] = useState(true);
-  // sentinelRef — a hidden <div> at the bottom of the post list
-  // When it becomes visible (scrolled into view), we load the next page
   const sentinelRef = useRef(null);
-  const observerRef = useRef(null); // holds the IntersectionObserver instance
-  // pageNum: which page to fetch (1 = first page, 2 = second, etc.)
-  // append: if true, add new posts to the list; if false, replace the list
-  const loadFeed = async (pageNum = 1, append = false) => {
-    if (pageNum === 1) setLoadingInitial(true);
-    else setLoadingMore(true);
-    try {
-      const res = await API.get(`/posts/feed?page=${pageNum}&limit=${PAGE_SIZE}`);
-      const { posts: newPosts = [], pages = 1 } = res.data || {};
-      // append mode: add to existing list; replace mode: start fresh
-      setPosts(prev => append ? [...prev, ...newPosts] : newPosts);
-      setHasMore(pageNum < pages); // if we're on the last page, no more to load
-    } catch (err) {
-      console.error(err);
-    }
-    if (pageNum === 1) setLoadingInitial(false);
-    else setLoadingMore(false);
-  };
+  const observerRef = useRef(null);
   // Loads all sidebar data in parallel using Promise.all.
   // Each individual request has .catch() so one failure doesn't block the rest.
   const loadSidebar = async () => {
@@ -309,10 +292,17 @@ function FeedPage({ user }) {
       setStatsLoading(false);
       setTrending(trendingRes.data);
 
-      // Suggested groups: filter out groups the user is already a member of
+      // Suggested groups: filter out groups the user is already a member of,
+      // then sort so groups from the user's own department appear first
       const allGroups = Array.isArray(groupsRes.data) ? groupsRes.data : [];
       const nonMember = allGroups.filter(g => !g.members?.some(m => String(m._id || m) === String(user._id)));
-      setSuggestedGroups(nonMember.slice(0, 3)); // show at most 3
+      const userDept = (user.department || '').toLowerCase();
+      nonMember.sort((a, b) => {
+        const aMatch = (a.department || '').toLowerCase() === userDept ? -1 : 0;
+        const bMatch = (b.department || '').toLowerCase() === userDept ? -1 : 0;
+        return aMatch - bMatch;
+      });
+      setSuggestedGroups(nonMember.slice(0, 3));
 
       // Suggested users: filter out self and existing friends.
       // We fetch the user's own profile fresh from the API so the friends list is
@@ -334,21 +324,13 @@ function FeedPage({ user }) {
     setSidebarLoading(false);
   };
 
-  // Load feed and sidebar when the page mounts
-  useEffect(() => {
-    loadFeed(1, false);
-    loadSidebar();
-  }, []);
-  // handleLoadMore is wrapped in useCallback so it stays the same function reference
-  // between renders, which prevents the IntersectionObserver from being torn down
-  // and recreated unnecessarily.
+  // Load sidebar when the page mounts
+  useEffect(() => { loadSidebar(); }, []);
 
-  const handleLoadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return; // guard: don't double-fetch
-    const nextPage = page + 1;
-    setPage(nextPage);
-    await loadFeed(nextPage, true); // append = true: add to existing list
-  }, [loadingMore, hasMore, page]);
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -402,8 +384,7 @@ function FeedPage({ user }) {
       <div className="feed-layout">
         {/* Main feed column */}
         <main>
-          {/* Post creation form — on submit, reload from page 1 */}
-          <PostForm onCreated={() => { setPage(1); loadFeed(1, false); }} />
+          <PostForm onCreated={() => queryClient.invalidateQueries({ queryKey: ['feed'] })} />
 
           {loadingInitial ? (
             /* Show 3 skeleton cards while the first page loads */
@@ -420,11 +401,11 @@ function FeedPage({ user }) {
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                 </svg>
               </div>
-              <div className="empty-state-title">Your feed is empty</div>
-              <div className="empty-state-text">Join groups or add friends to see posts here.</div>
+              <div className="empty-state-title">{t('feedEmpty')}</div>
+              <div className="empty-state-text">{t('feedEmptyDesc')}</div>
               <div className="empty-state-actions">
-                <Link to="/groups" className="btn btn-primary btn-small">Browse Groups</Link>
-                <Link to="/search" className="btn btn-outline btn-small">Find People</Link>
+                <Link to="/groups" className="btn btn-primary btn-small">{t('browseGroups')}</Link>
+                <Link to="/search" className="btn btn-outline btn-small">{t('findPeople')}</Link>
               </div>
             </div>
           ) : (
@@ -435,8 +416,8 @@ function FeedPage({ user }) {
                   key={post._id}
                   post={post}
                   currentUserId={user._id}
-                  onUpdate={() => loadFeed(1, false)} // reload from page 1 after edit
-                  onDelete={() => loadFeed(1, false)} // reload from page 1 after delete
+                  onUpdate={() => queryClient.invalidateQueries({ queryKey: ['feed'] })}
+                  onDelete={() => queryClient.invalidateQueries({ queryKey: ['feed'] })}
                 />
               ))}
 
@@ -444,18 +425,16 @@ function FeedPage({ user }) {
                   IntersectionObserver fires handleLoadMore when this element enters the viewport. */}
               <div ref={sentinelRef} className="infinite-sentinel" aria-hidden="true" />
 
-              {/* Loading spinner shown between pages */}
-              {loadingMore && (
+              {isFetchingNextPage && (
                 <div className="load-more-spinner">
                   <span className="btn-spinner" />
-                  Loading more...
+                  {t('loadingMore')}
                 </div>
               )}
 
-              {/* End-of-feed message when all pages have been loaded */}
-              {!hasMore && posts.length > 0 && (
+              {!hasNextPage && posts.length > 0 && (
                 <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
-                  You've seen all posts
+                  {t('seenAllPosts')}
                 </div>
               )}
             </>

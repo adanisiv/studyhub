@@ -1,10 +1,21 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 import { ToastProvider } from './components/common/Toast';
 import { ConfirmProvider } from './components/common/ConfirmDialog';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Navbar from './components/common/Navbar';
+import { LanguageProvider } from './contexts/LanguageContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import FeedPage from './pages/FeedPage';
@@ -25,6 +36,7 @@ function App() {
   const [user, setUser] = useState(null);              // null = not logged in
   const [notifications, setNotifications] = useState([]); // list of notification objects
   const [unreadCount, setUnreadCount] = useState(0);   // badge count for the bell icon
+  const [activity, setActivity] = useState([]);         // recent likes/comments on the user's posts
   // Detects the browser language and sets the HTML dir attribute for RTL languages.
   // This makes Hebrew, Arabic, etc. render correctly right-to-left.
   useEffect(() => {
@@ -44,7 +56,19 @@ function App() {
   // The user object is saved to localStorage by the login() function below.
   useEffect(() => {
     const saved = localStorage.getItem('user');
-    if (saved) setUser(JSON.parse(saved));
+    const token = localStorage.getItem('token');
+    if (saved && token) {
+      setUser(JSON.parse(saved));
+      // Refresh user profile from server so avatar/name are always up-to-date
+      API.get('/users/me').then(res => {
+        const fresh = res.data;
+        setUser(prev => {
+          const next = { ...prev, ...fresh };
+          localStorage.setItem('user', JSON.stringify(next));
+          return next;
+        });
+      }).catch(() => {});
+    }
   }, []);
   // Create a socket connection when the user logs in, disconnect when they log out.
   // The JWT is sent in the handshake auth so the server can verify who's connecting.
@@ -62,12 +86,13 @@ function App() {
     // Cleanup: disconnect when user logs out or component unmounts
     return () => { socket.disconnect(); socket = null; };
   }, [user]); // re-run when user changes (login/logout)
-  // Fetches existing notifications + unread count when the user logs in.
+  // Fetches existing notifications + unread count + activity stream when the user logs in.
   // Real-time notifications (above) only deliver NEW ones while online.
   useEffect(() => {
     if (!user) return;
     API.get('/notifications').then(res => setNotifications(res.data)).catch(() => {});
     API.get('/notifications/unread').then(res => setUnreadCount(res.data.count)).catch(() => {});
+    API.get(`/stats/user/${user._id}/activity`).then(res => setActivity(Array.isArray(res.data) ? res.data : [])).catch(() => {});
   }, [user]);
 
   // Mark all notifications as read (called by Navbar when the panel is opened)
@@ -99,6 +124,16 @@ function App() {
     setUser(userData);
   };
 
+  // updateUser — called by ProfilePage after the user saves their own profile
+  // (e.g. new name or avatar) so the Navbar reflects the change immediately
+  const updateUser = (patch) => {
+    setUser(prev => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   // logout — clears all auth state and disconnects socket
   const logout = () => {
     localStorage.removeItem('user');
@@ -106,6 +141,7 @@ function App() {
     setUser(null);
     setNotifications([]);
     setUnreadCount(0);
+    setActivity([]);
     if (socket) { socket.disconnect(); socket = null; }
   };
   // Redirects unauthenticated users to /login.
@@ -115,7 +151,9 @@ function App() {
     return children;
   };
   return (
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
+      <LanguageProvider>
       {/* ErrorBoundary catches any unhandled JS errors in child components */}
       <ErrorBoundary>
         {/* ToastProvider makes toast notifications available app-wide via useToast() */}
@@ -132,6 +170,7 @@ function App() {
                   unreadCount={unreadCount}
                   onMarkAllRead={handleMarkAllRead}
                   onDeleteNotification={handleDeleteNotification}
+                  activity={activity}
                 />
               )}
 
@@ -160,7 +199,7 @@ function App() {
                   <Protected><div className="main"><SearchPage user={user} /></div></Protected>
                 } />
                 <Route path="/profile/:id" element={
-                  <Protected><div className="main"><ProfilePage currentUser={user} /></div></Protected>
+                  <Protected><div className="main"><ProfilePage currentUser={user} onUserUpdate={updateUser} /></div></Protected>
                 } />
                 {/* Chat has its own full-page layout (no .main wrapper) */}
                 <Route path="/chat" element={
@@ -181,7 +220,9 @@ function App() {
           </ConfirmProvider>
         </ToastProvider>
       </ErrorBoundary>
+      </LanguageProvider>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

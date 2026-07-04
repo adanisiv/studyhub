@@ -2,6 +2,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import API from '../api/axios';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Deterministic room ID: sort the two user IDs so A→B and B→A produce the same room
 const makeRoomId = (a, b) => [a, b].sort().join('_');
@@ -14,22 +15,22 @@ const formatTime = (d) => {
 
 // Format a date as a readable label for the date divider between messages
 // Returns "Today", "Yesterday", or "Monday, Jan 1"
-const formatDateLabel = (d) => {
+const formatDateLabel = (d, labels = {}) => {
   if (!d) return '';
   const date = new Date(d);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  if (date.toDateString() === today.toDateString()) return labels.today || 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return labels.yesterday || 'Yesterday';
   return date.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
 };
 
 // Format a timestamp as a short relative time for the conversation list
-const timeAgo = (d) => {
+const timeAgo = (d, labels = {}) => {
   if (!d) return '';
   const mins = Math.floor((Date.now() - new Date(d)) / 60000);
-  if (mins < 1) return 'now';
+  if (mins < 1) return labels?.now || 'now';
   if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h`;
@@ -73,32 +74,31 @@ function Receipt({ msg, myId, friendId }) {
 // last message preview, time, and unread count badge.
 function ConvItem({ conv, activeId, onlineUsers, myId }) {
   const { friend, lastMsg, unreadCount } = conv;
-  const isActive = activeId === friend._id; // is this the currently open conversation?
-  const isOnline = onlineUsers.has(friend._id); // is this friend currently online?
+  const isActive = activeId === friend._id;
+  const isOnline = onlineUsers.has(friend._id);
   const isMe = lastMsg && (lastMsg.sender?._id || lastMsg.sender) === myId;
+  const { t } = useLanguage();
+  const tLabels = { now: t('nowLabel') };
 
   return (
-    // Link navigates to /chat/:friendId — React Router updates the URL
     <Link
       to={`/chat/${friend._id}`}
       className={`chat-conv-item ${isActive ? 'active' : ''}`}
     >
       <div className="chat-conv-avatar-wrap">
         <div className="avatar avatar-md">{friend.name?.charAt(0)}</div>
-        {/* Green dot shown only when the friend is online */}
-        {isOnline && <span className="chat-conv-online-dot" title="Online" />}
+        {isOnline && <span className="chat-conv-online-dot" title={t('online')} />}
       </div>
       <div className="chat-conv-info">
         <div className="chat-conv-row">
           <span className="chat-conv-name">{friend.name}</span>
-          {lastMsg && <span className="chat-conv-time">{timeAgo(lastMsg.createdAt)}</span>}
+          {lastMsg && <span className="chat-conv-time">{timeAgo(lastMsg.createdAt, tLabels)}</span>}
         </div>
         <div className="chat-conv-preview">
           {lastMsg ? (
-            /* Prefix "You: " if the last message was sent by the current user */
-            <>{isMe ? 'You: ' : ''}{lastMsg.text}</>
+            <>{isMe ? `${t('you')}: ` : ''}{lastMsg.text}</>
           ) : (
-            <span style={{ fontStyle: 'italic' }}>No messages yet</span>
+            <span style={{ fontStyle: 'italic' }}>{t('noMessagesHere')}</span>
           )}
         </div>
       </div>
@@ -111,8 +111,10 @@ function ConvItem({ conv, activeId, onlineUsers, myId }) {
 }
 
 function ChatPage({ user }) {
-  const { friendId } = useParams(); // from /chat/:friendId (may be undefined)
+  const { friendId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const dateLabels = { today: t('today'), yesterday: t('yesterday') };
   const [conversations, setConversations] = useState([]); // list of conversations with friends
   const [convsLoading, setConvsLoading] = useState(true);
   const [friend, setFriend] = useState(null);             // the currently selected friend's profile
@@ -330,7 +332,7 @@ function ChatPage({ user }) {
       {/* mobileSidebar controls visibility on small screens via CSS class */}
       <div className={`chat-sidebar ${mobileSidebar ? 'mobile-show' : ''}`}>
         <div className="chat-sidebar-header">
-          <span className="chat-sidebar-title">Messages</span>
+          <span className="chat-sidebar-title">{t('messagesTitle')}</span>
           {/* Link to /search where users can find new people to chat with */}
           <Link to="/search" className="nav-icon-btn" aria-label="Find people" title="Find people to chat with">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -352,7 +354,7 @@ function ChatPage({ user }) {
               id="conv-search"
               className="form-input"
               style={{ paddingLeft: 34, borderRadius: 'var(--radius-full)', fontSize: 'var(--text-sm)' }}
-              placeholder="Search conversations..."
+              placeholder={t('searchConvs')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -381,13 +383,13 @@ function ChatPage({ user }) {
                 </svg>
               </div>
               <div className="empty-state-title" style={{ fontSize: 'var(--text-sm)' }}>
-                {searchQuery ? 'No results' : 'No conversations'}
+                {searchQuery ? t('noResults') : t('noConversations')}
               </div>
               <div className="empty-state-text" style={{ fontSize: 'var(--text-xs)' }}>
-                {searchQuery ? 'Try a different name' : 'Add friends to start chatting'}
+                {searchQuery ? t('tryDifferentName') : t('addFriendsChat')}
               </div>
               {!searchQuery && (
-                <Link to="/search" className="btn btn-primary btn-small" style={{ marginTop: 8 }}>Find People</Link>
+                <Link to="/search" className="btn btn-primary btn-small" style={{ marginTop: 8 }}>{t('findPeople')}</Link>
               )}
             </div>
           ) : (
@@ -417,10 +419,10 @@ function ChatPage({ user }) {
                 </svg>
               </div>
               <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
-                Your Messages
+                {t('yourMessages')}
               </div>
               <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', maxWidth: 260, margin: '0 auto' }}>
-                Select a conversation from the sidebar to start chatting
+                {t('selectConversation')}
               </div>
             </div>
           </div>
@@ -455,7 +457,7 @@ function ChatPage({ user }) {
                   {/* Online/Offline status text with colored dot */}
                   <div style={{ fontSize: 'var(--text-xs)', color: isFriendOnline ? 'var(--success)' : 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: isFriendOnline ? 'var(--success)' : 'var(--text-tertiary)', display: 'inline-block' }} />
-                    {isFriendOnline ? 'Online' : 'Offline'}
+                    {isFriendOnline ? t('online') : t('offline')}
                   </div>
                 </div>
               </Link>
@@ -503,14 +505,14 @@ function ChatPage({ user }) {
                     autoFocus
                   />
                   <button className="btn btn-primary btn-small" type="submit" disabled={inChatSearching}>
-                    {inChatSearching ? <span className="btn-spinner" /> : 'Search'}
+                    {inChatSearching ? <span className="btn-spinner" /> : t('search')}
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary btn-small"
                     onClick={() => { setShowInChatSearch(false); setInChatResults([]); setInChatQuery(''); }}
                   >
-                    Close
+                    {t('close')}
                   </button>
                 </form>
                 {/* Result list — collapses when empty */}
@@ -532,7 +534,7 @@ function ChatPage({ user }) {
                           fontSize: 'var(--text-sm)',
                         }}>
                           <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginBottom: 2 }}>
-                            {isMine ? 'You' : m.sender?.name || 'Unknown'} · {new Date(m.createdAt).toLocaleString()}
+                            {isMine ? t('you') : m.sender?.name || 'Unknown'} · {new Date(m.createdAt).toLocaleString()}
                           </div>
                           <div style={{ color: 'var(--text-primary)' }}>{m.text}</div>
                         </div>
@@ -548,7 +550,7 @@ function ChatPage({ user }) {
                     fontStyle: 'italic',
                     textAlign: 'center',
                   }}>
-                    No messages match "{inChatQuery}"
+                    {t('noMessagesMatch')} "{inChatQuery}"
                   </div>
                 )}
               </div>
@@ -561,8 +563,8 @@ function ChatPage({ user }) {
                 /* Empty state for a new conversation */
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: 'var(--space-10)', color: 'var(--text-tertiary)', textAlign: 'center' }}>
                   <div style={{ fontSize: 48, opacity: 0.15, marginBottom: 'var(--space-3)' }}>👋</div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Say hello to {friend?.name}</div>
-                  <div style={{ fontSize: 'var(--text-sm)', marginTop: 4 }}>Start the conversation!</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{t('sayHelloTo')} {friend?.name}</div>
+                  <div style={{ fontSize: 'var(--text-sm)', marginTop: 4 }}>{t('startConversation')}</div>
                 </div>
               )}
 
@@ -583,8 +585,8 @@ function ChatPage({ user }) {
                           <React.Fragment key={msg._id || `${gi}-${mi}`}>
                             {/* Date divider: shown on the first message of each new day */}
                             {showDivider && msg.createdAt && (
-                              <div className="chat-date-divider" aria-label={formatDateLabel(msg.createdAt)}>
-                                {formatDateLabel(msg.createdAt)}
+                              <div className="chat-date-divider" aria-label={formatDateLabel(msg.createdAt, dateLabels)}>
+                                {formatDateLabel(msg.createdAt, dateLabels)}
                               </div>
                             )}
                             <div className={`msg-group ${isMine ? 'mine' : 'theirs'}`} style={{ marginTop: mi === 0 && gi > 0 ? 'var(--space-3)' : 0 }}>
@@ -631,7 +633,7 @@ function ChatPage({ user }) {
                   <span className="typing-dots">
                     <span /><span /><span />
                   </span>
-                  <span>{friend?.name} is typing</span>
+                  <span>{friend?.name} {t('isTyping')}</span>
                 </>
               )}
             </div>
@@ -643,7 +645,7 @@ function ChatPage({ user }) {
                 id="chat-msg-input"
                 ref={inputRef}
                 className="chat-input-field"
-                placeholder={`Message ${friend?.name || ''}...`}
+                placeholder={`${t('typeMessage').replace('…', '')} ${friend?.name || ''}...`}
                 value={text}
                 onChange={handleTyping}     // updates text AND emits typing events
                 onKeyDown={handleKeyDown}   // Enter = send, Shift+Enter = newline

@@ -128,13 +128,58 @@ exports.postTypes = async (req, res) => {
   }
 };
 
-// Returns aggregated stats for a single user:
-//   • totalPosts: posts they've authored
-//   • likesReceived: total likes across all their posts
-//   • commentsReceived: total comments across all their posts
-//   • postsByType: { question, material, announcement } counts for their pie chart
-//
-// Used to enrich the user profile page with at-a-glance numbers.
+// Returns a flat activity stream of the most recent likes + comments OTHER users
+// left on this user's posts. Each entry has type, user, postPreview, and when.
+exports.userActivity = async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const userIdStr = String(req.params.userId);
+
+    const posts = await Post.find({ author: req.params.userId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .populate('likes', 'name avatar')
+      .populate('comments.author', 'name avatar')
+      .select('content likes comments createdAt');
+
+    const activity = [];
+    posts.forEach(p => {
+      (p.likes || []).forEach(liker => {
+        if (!liker) return;
+        const actorId = String(liker._id || liker);
+        if (actorId === userIdStr) return; // skip self-likes
+        activity.push({
+          type: 'like',
+          user: { _id: liker._id, name: liker.name, avatar: liker.avatar },
+          postId: p._id,
+          postPreview: (p.content || '').slice(0, 80),
+          when: p.createdAt
+        });
+      });
+      (p.comments || []).forEach(c => {
+        if (!c.author) return;
+        const actorId = String(c.author._id || c.author);
+        if (actorId === userIdStr) return; // skip self-comments
+        activity.push({
+          type: 'comment',
+          user: { _id: c.author._id, name: c.author.name, avatar: c.author.avatar },
+          postId: p._id,
+          postPreview: (p.content || '').slice(0, 80),
+          text: c.text,
+          when: c.createdAt
+        });
+      });
+    });
+
+    activity.sort((a, b) => new Date(b.when) - new Date(a.when));
+    res.json(activity.slice(0, 20));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Returns totalPosts, likesReceived, commentsReceived, and postsByType for the
+// KPI tiles shown on the profile page.
 exports.userStats = async (req, res) => {
   try {
     const mongoose = require('mongoose');
@@ -181,39 +226,58 @@ exports.userStats = async (req, res) => {
 exports.trending = async (req, res) => {
   try {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const User = require('../models/User');
 
-    // Run both aggregations in parallel
+    // Determine which posts are relevant to this user's department
+    // so trending tags reflect their field of study, not unrelated departments
+    const currentUser = await User.findById(req.userId).select('department friends');
+    const userDept = currentUser?.department || '';
+
+    // Case-insensitive department match (handles "Computer science" vs "Computer Science")
+    const deptRegex = new RegExp(`^${userDept.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
+    const deptGroups = await Group.find({ department: deptRegex }).select('_id');
+    const deptGroupIds = deptGroups.map(g => g._id);
+
+    const deptAuthors = await User.find({ department: deptRegex }).select('_id');
+    const deptAuthorIds = deptAuthors.map(u => u._id);
+
     const [tags, groups] = await Promise.all([
 
-      // Trending tags: count tag occurrences in recent posts
+      // Trending tags: scoped to the user's department (posts in dept groups OR by dept authors)
       Post.aggregate([
-        // Filter to recent posts that actually have tags
-        { $match: { createdAt: { $gte: oneWeekAgo }, tags: { $exists: true, $ne: [] } } },
-        // $unwind: splits the tags array so each tag becomes its own document
-        // e.g. post with tags: ['js', 'react'] becomes two separate documents
+        {
+          $match: {
+            createdAt: { $gte: oneWeekAgo },
+            tags: { $exists: true, $ne: [] },
+            $or: [
+              { group: { $in: deptGroupIds } },
+              { author: { $in: deptAuthorIds }, group: null }
+            ]
+          }
+        },
         { $unwind: '$tags' },
-        // Count occurrences of each tag string
         { $group: { _id: '$tags', count: { $sum: 1 } } },
-        { $sort: { count: -1 } }, // most popular first
-        { $limit: 10 }            // top 10 tags
+        { $sort: { count: -1 } },
+        { $limit: 10 }
       ]),
 
-      // Top groups by member count
+      // Top groups — scoped to user's department
       Group.aggregate([
+        { $match: { department: userDept } },
         { $project: {
             name: 1,
-            // $size computes the length of the members array at query time
             memberCount: { $size: '$members' },
             subject: 1
         }},
-        { $sort: { memberCount: -1 } }, // most members first
-        { $limit: 5 }                   // top 5 groups
+        { $sort: { memberCount: -1 } },
+        { $limit: 5 }
       ])
     ]);
 
     res.json({
       tags: tags.map(t => ({ tag: t._id, count: t.count })),
-      groups // already has name, memberCount, subject
+      groups
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

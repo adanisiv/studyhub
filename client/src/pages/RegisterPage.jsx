@@ -1,9 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function RegisterPage({ onLogin }) {
-  // All form fields stored in a single state object for cleaner handleChange logic
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -13,9 +13,8 @@ function RegisterPage({ onLogin }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
-  // Unified change handler — uses the input's 'name' attribute as the state key.
-  // e.g. <input name="email" /> updates form.email
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -25,9 +24,7 @@ function RegisterPage({ onLogin }) {
     setError('');
     setLoading(true);
     try {
-      // POST /api/auth/register — creates the user and returns { user, token }
       const res = await API.post('/auth/register', form);
-      // Immediately log the user in (App.jsx stores credentials and updates state)
       onLogin(res.data.user, res.data.token);
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
@@ -47,42 +44,40 @@ function RegisterPage({ onLogin }) {
             </svg>
             StudyHub
           </div>
-          <h1 className="auth-title">Create your account</h1>
-          <p className="auth-subtitle">Join the student network and start collaborating</p>
+          <h1 className="auth-title">{t('createAccount')}</h1>
+          <p className="auth-subtitle">{t('registerSubtitle')}</p>
         </div>
 
         <div className="auth-card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="reg-name">Full name</label>
+              <label htmlFor="reg-name">{t('fullName')}</label>
               <input id="reg-name" className="form-input" name="name" value={form.name}
-                onChange={handleChange} placeholder="Your full name" required autoComplete="name" />
+                onChange={handleChange} placeholder={t('fullNamePlaceholder')} required autoComplete="name" />
             </div>
 
             <div className="form-group">
-              <label htmlFor="reg-email">Email address</label>
+              <label htmlFor="reg-email">{t('emailAddress')}</label>
               <input id="reg-email" className="form-input" name="email" type="email" value={form.email}
                 onChange={handleChange} placeholder="you@university.edu" required autoComplete="email" />
             </div>
 
             <div className="form-group">
-              <label htmlFor="reg-password">Password</label>
+              <label htmlFor="reg-password">{t('password')}</label>
               <input id="reg-password" className="form-input" name="password" type="password" value={form.password}
-                onChange={handleChange} placeholder="Min 6 characters" required minLength={6} autoComplete="new-password" />
+                onChange={handleChange} placeholder={t('minChars')} required minLength={6} autoComplete="new-password" />
             </div>
 
-            {/* Department and year on the same row (grid layout) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
               <div className="form-group">
-                <label htmlFor="reg-department">Department</label>
+                <label htmlFor="reg-department">{t('department')}</label>
                 <input id="reg-department" className="form-input" name="department" value={form.department}
-                  onChange={handleChange} placeholder="e.g. Computer Science" />
+                  onChange={handleChange} placeholder={t('deptPlaceholder')} />
               </div>
               <div className="form-group">
-                <label htmlFor="reg-year">Year</label>
-                {/* Select generates options 1–4 from an array */}
+                <label htmlFor="reg-year">{t('year')}</label>
                 <select id="reg-year" className="form-input" name="year" value={form.year} onChange={handleChange}>
-                  {[1,2,3,4].map(y => <option key={y} value={y}>Year {y}</option>)}
+                  {[1,2,3,4].map(y => <option key={y} value={y}>{t('year')} {y}</option>)}
                 </select>
               </div>
             </div>
@@ -94,13 +89,13 @@ function RegisterPage({ onLogin }) {
               style={{ width: '100%', marginTop: 'var(--space-4)', padding: '12px' }}
               disabled={loading}
             >
-              {loading ? <><span className="btn-spinner" /> Creating account...</> : 'Create account'}
+              {loading ? <><span className="btn-spinner" /> {t('creatingAccount')}</> : t('createAccount')}
             </button>
           </form>
         </div>
 
         <div className="auth-footer">
-          Already have an account? <Link to="/login">Sign in</Link>
+          {t('haveAccount')} <Link to="/login">{t('signIn')}</Link>
         </div>
       </div>
     </div>

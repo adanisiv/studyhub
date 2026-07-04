@@ -7,6 +7,7 @@ const { createPostRules } = require('../middleware/validate'); // validates cont
 router.post('/',               auth, createPostRules, ctrl.create);  // POST   /api/posts       — create
 router.get('/feed',            auth, ctrl.feed);                     // GET    /api/posts/feed  — personalized feed
 router.get('/my',              auth, ctrl.myPosts);                  // GET    /api/posts/my    — own posts
+router.get('/user/:userId',    auth, ctrl.byUser);                   // GET    /api/posts/user/:id — posts by any user
 router.get('/search',          auth, ctrl.search);                   // GET    /api/posts/search — advanced search
 router.get('/group/:groupId',  auth, ctrl.byGroup);                  // GET    /api/posts/group/:id — group posts
 router.get('/:id',             auth, ctrl.getById);                  // GET    /api/posts/:id   — single post
@@ -17,6 +18,6 @@ router.delete('/:id',          auth, ctrl.remove);                   // DELETE /
 router.post('/:id/comment',                      auth, ctrl.addComment);     // add comment
 router.delete('/:postId/comment/:commentId',     auth, ctrl.deleteComment);  // delete comment
 router.post('/:id/like',                         auth, ctrl.toggleLike);     // toggle like
-router.get('/:id/likes', auth, ctrl.getLikes);
+router.get('/:id/likes',                         auth, ctrl.getLikes);        // who liked this post
 
 module.exports = router;

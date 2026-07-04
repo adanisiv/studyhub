@@ -102,6 +102,19 @@ exports.myPosts = async (req, res) => {
   }
 };
 
+exports.byUser = async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.params.userId })
+      .sort({ createdAt: -1 })
+      .populate('author', 'name email avatar')
+      .populate('group', 'name')
+      .populate('comments.author', 'name avatar');
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Used on the Group Detail page. Blocks access to private groups for non-members.
 exports.byGroup = async (req, res) => {
   try {
@@ -290,6 +303,18 @@ exports.deleteComment = async (req, res) => {
   }
 };
 
+// Returns the list of users who liked a post (name + _id only).
+exports.getLikes = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('likes', 'name _id');
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json(post.likes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Calling this endpoint toggles: like if not liked, unlike if already liked.
 // We use .some() with .toString() because req.userId is a string but post.likes
 // contains Mongoose ObjectIds — direct indexOf/=== comparison always fails.
@@ -325,19 +350,6 @@ exports.toggleLike = async (req, res) => {
 
     await post.save();
     res.json({ likes: post.likes.length, liked: !alreadyLiked });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Returns the list of users who liked a post (name + _id only).
-// Used by the client-side "Likes" modal in PostCard.
-exports.getLikes = async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id)
-      .populate('likes', 'name _id');
-    if (!post) return res.status(404).json({ error: 'Post not found' });
-    res.json(post.likes);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

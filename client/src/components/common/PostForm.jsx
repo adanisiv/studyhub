@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import API from '../../api/axios';
 import { useToast } from './Toast';
 import EmojiPicker from './EmojiPicker';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 function PostForm({ groupId, onCreated }) {
   const [content, setContent] = useState('');
@@ -18,6 +19,7 @@ function PostForm({ groupId, onCreated }) {
   const [popularTags, setPopularTags] = useState([]); // list of {tag, count} from trending
   const textareaRef = useRef(null);
   const toast = useToast();
+  const { t } = useLanguage();
 
   // Load popular tags once so users can click-to-insert instead of typing them out
   useEffect(() => {
@@ -122,7 +124,7 @@ function PostForm({ groupId, onCreated }) {
             id="post-content"
             ref={textareaRef}
             className="form-input"
-            placeholder="Share something with your group..."
+            placeholder={t('shareWithGroup')}
             value={content}
             onChange={e => { setContent(e.target.value); if (!expanded) setExpanded(true); }}
             onFocus={() => setExpanded(true)}
@@ -163,12 +165,12 @@ function PostForm({ groupId, onCreated }) {
               <label htmlFor="post-type" className="sr-only">Post type</label>
               <select id="post-type" className="form-input" style={{ width: 'auto', flex: 'none' }}
                 value={type} onChange={e => setType(e.target.value)}>
-                <option value="question">Question</option>
-                <option value="material">Material</option>
-                <option value="announcement">Announcement</option>
+                <option value="question">{t('postQuestion')}</option>
+                <option value="material">{t('postMaterial')}</option>
+                <option value="announcement">{t('postAnnouncement')}</option>
               </select>
               <label htmlFor="post-tags" className="sr-only">Tags</label>
-              <input id="post-tags" className="form-input" style={{ flex: 1, minWidth: 140 }} placeholder="Tags (comma separated, e.g. js, react)"
+              <input id="post-tags" className="form-input" style={{ flex: 1, minWidth: 140 }} placeholder={t('tagsPlaceholder')}
                 value={tags} onChange={e => setTags(e.target.value)} />
             </div>
 
@@ -176,7 +178,7 @@ function PostForm({ groupId, onCreated }) {
             {popularTags.length > 0 && (
               <div className="flex gap-1 mt-10" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginRight: 4 }}>
-                  Popular:
+                  {t('popular')}
                 </span>
                 {popularTags.map(t => {
                   const active = tags.split(',').map(x => x.trim()).includes(t.tag);
@@ -209,9 +211,9 @@ function PostForm({ groupId, onCreated }) {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                 </svg>
-                <span>{uploading ? 'Uploading...' : 'Click to upload file (images, videos, PDF, docs...)'}</span>
+                <span>{uploading ? t('uploading') : t('uploadFile')}</span>
               </div>
-              {mediaUrl && !uploading && <span className="upload-status success">Uploaded</span>}
+              {mediaUrl && !uploading && <span className="upload-status success">{t('uploaded')}</span>}
             </div>
 
             {/* File preview */}
@@ -228,10 +230,10 @@ function PostForm({ groupId, onCreated }) {
             {error && <p className="error-text">{error}</p>}
 
             <div className="flex gap-2 mt-10" style={{ justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary btn-small" onClick={handleCancel}>Cancel</button>
+              <button type="button" className="btn btn-secondary btn-small" onClick={handleCancel}>{t('cancel')}</button>
               <button className="btn btn-primary btn-small" type="submit">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                Publish
+                {t('publish')}
               </button>
             </div>
           </div>
