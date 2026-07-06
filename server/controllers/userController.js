@@ -80,7 +80,7 @@ exports.getById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('name email department year avatar friends')
-      .populate('friends', 'name email avatar'); // replace ObjectId refs with full objects
+      .populate('friends', 'name email avatar department'); // replace ObjectId refs with full objects
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {

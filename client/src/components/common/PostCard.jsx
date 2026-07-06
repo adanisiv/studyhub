@@ -313,10 +313,16 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
             const cColor = c.author?.name ? c.author.name.charCodeAt(0) % AVATAR_COLORS.length : 0;
             return (
               <div key={c._id} className="comment-item">
-                {/* Commenter's letter avatar */}
-                <div className={`comment-avatar ${AVATAR_COLORS[cColor]}`} style={{ background: AVATAR_COLORS[cColor] ? undefined : 'var(--info)' }} aria-hidden="true">
-                  {cInitial}
-                </div>
+                {/* Commenter's avatar — profile photo if they have one, otherwise a letter */}
+                {c.author?.avatar
+                  ? <div className="comment-avatar" style={{ overflow: 'hidden', padding: 0 }} aria-hidden="true">
+                      <img src={c.author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.textContent = cInitial; e.currentTarget.parentElement.style.background = 'var(--info)'; }} />
+                    </div>
+                  : <div className={`comment-avatar ${AVATAR_COLORS[cColor]}`} style={{ background: AVATAR_COLORS[cColor] ? undefined : 'var(--info)' }} aria-hidden="true">
+                      {cInitial}
+                    </div>
+                }
                 <div className="comment-body">
                   <span className="comment-author">{c.author?.name || 'User'}</span>
                   <span className="comment-text">{c.text}</span>

@@ -455,17 +455,32 @@ function ProfilePage({ currentUser, onUserUpdate }) {
         <h2 className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
           {t('friends')} <span className="section-count">{profile.friends?.length || 0}</span>
         </h2>
-        <div className="flex gap-2 flex-wrap">
-          {profile.friends?.map(f => (
-            <Link key={f._id} to={`/profile/${f._id}`} className="member-chip">
-              <div className="avatar avatar-sm" style={{ width: 22, height: 22, fontSize: 10 }}>{f.name?.charAt(0)}</div>
-              {f.name}
-            </Link>
-          ))}
-          {(!profile.friends || profile.friends.length === 0) && (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>{t('noFriendsYet')}</p>
-          )}
-        </div>
+        {profile.friends?.length > 0 ? (
+          <div className="friends-list" style={{ maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            {profile.friends.map(f => (
+              <Link
+                key={f._id}
+                to={`/profile/${f._id}`}
+                className="friend-row"
+                style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', textDecoration: 'none', color: 'var(--text-primary)' }}
+              >
+                {f.avatar
+                  ? <div className="avatar avatar-sm" style={{ width: 36, height: 36, overflow: 'hidden', padding: 0, flexShrink: 0 }}>
+                      <img src={f.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.textContent = f.name?.charAt(0)?.toUpperCase() || '?'; }} />
+                    </div>
+                  : <div className="avatar avatar-sm" style={{ width: 36, height: 36, fontSize: 15, flexShrink: 0 }}>{f.name?.charAt(0)?.toUpperCase() || '?'}</div>
+                }
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</span>
+                  {f.department && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{f.department}</span>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>{t('noFriendsYet')}</p>
+        )}
       </div>
 
       {/* ── Achievements ────────────────────────────────────────────────── */}
