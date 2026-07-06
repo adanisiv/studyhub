@@ -2372,8 +2372,8 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   cursor: default;
 }
 .notif-item:hover { background: var(--bg-hover); }
-.notif-item.unread { background: var(--accent-50); }
-.notif-item.unread:hover { background: var(--accent-100); }
+.notif-item.unread { background: var(--accent-glow); }
+.notif-item.unread:hover { background: rgba(249, 58, 91, 0.25); }
 
 .notif-item-unread-dot {
   position: absolute;
@@ -2570,4 +2570,27 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 [dir="rtl"] .file-preview {
   flex-direction: row-reverse;
 }
+/* ===========================================
+   NOTIFICATION READABILITY (theme-aware)
+   =========================================== */
 
+/* רקע ה-unread כבר מוגדר לפי --accent-glow, שמשתנה אוטומטית
+   בין מצב בהיר לכהה (מוגדר גם ב-:root וגם תחת [data-theme="dark"]).
+   אין צורך "לתקן" אותו בנפרד לכל מצב. */
+
+/* הטקסט תמיד ישתמש בצבע הראשי של הטקסט לפי המצב הנוכחי — 
+   לא בצבע קשיח, כדי שיתאים אוטומטית גם בהיר וגם כהה */
+.notif-item-message,
+.notification-item .notif-content {
+  color: var(--text-primary);
+}
+
+.notif-item.unread .notif-item-message,
+.notification-item.unread .notif-content {
+  font-weight: 600;
+}
+
+.notif-item-time,
+.notif-time {
+  color: var(--text-tertiary);
+}

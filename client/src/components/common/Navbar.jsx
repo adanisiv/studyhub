@@ -206,6 +206,19 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
             }}
           >
             {t('notifications')}
+            {unreadCount > 0 && (
+              <span style={{
+                marginLeft: 6,
+                background: 'var(--accent)',
+                color: '#fff',
+                borderRadius: 99,
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '1px 6px',
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setNotifTab('activity')}
