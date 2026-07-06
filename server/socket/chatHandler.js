@@ -8,10 +8,9 @@ module.exports = (io) => {
 
   io.on('connection', (socket) => {
     const userId = socket.userId; // set by the auth middleware in server.js
-    // Join a private room for real-time notifications
-    if (userId) {
-      socket.join(userId.toString());
-    }
+    // (The per-user notification room `user_<id>` is already joined in server.js,
+    //  which is where controllers emit to via io.to(`user_${recipientId}`).)
+
     // Notify everyone that this user just came online
     socket.broadcast.emit('user_online', { userId });
     // Fired when the user opens a chat conversation.
