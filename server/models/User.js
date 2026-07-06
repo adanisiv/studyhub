@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
   // Self-referencing array: each element is an ObjectId pointing to another User
   // ref: 'User' tells Mongoose how to populate these references
   friends:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  // Pending friend requests — populated only while a request is unresolved.
+  // sent: people THIS user asked to be friends with (awaiting their response)
+  // received: people who asked THIS user to be friends (awaiting a response)
+  friendRequestsSent:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  friendRequestsReceived: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   role:       { type: String, enum: ['student', 'admin'], default: 'student' }
 }, { timestamps: true }); // adds createdAt + updatedAt
 // Indexes speed up queries. Without them, MongoDB does a full collection scan.

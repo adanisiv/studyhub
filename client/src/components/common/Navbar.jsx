@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useToast } from './Toast';
+import API from '../../api/axios';
 
 const TYPE_ICON = {
   like: '❤️',
   comment: '💬',
   friend_request: '🤝',
+  friend_accept: '🎉',
   group_join: '👥',
   group_approved: '✅',
 };
 
 function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onDeleteNotification, activity }) {
+  const toast = useToast();
   const location = useLocation();
   const { t, lang, setLang } = useLanguage();
   const isActive = (path) => location.pathname === path ? 'nav-link active' : 'nav-link';
@@ -22,6 +26,29 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
   const [dark, setDark] = useState(
     () => document.documentElement.getAttribute('data-theme') === 'dark'
   );
+
+  // Accept/decline a pending friend request directly from the bell dropdown.
+  // Reuses onDeleteNotification to clear the notification once it's resolved
+  // either way — no separate "resolved" state needs to be tracked.
+  const handleAcceptFriend = async (senderId, notifId) => {
+    try {
+      await API.post(`/users/${user._id}/friend/accept`, { requesterId: senderId });
+      toast(t('friendRequestAcceptedToast'), 'success');
+      onDeleteNotification(notifId);
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed', 'error');
+    }
+  };
+
+  const handleDeclineFriend = async (senderId, notifId) => {
+    try {
+      await API.delete(`/users/${user._id}/friend`, { data: { friendId: senderId } });
+      toast(t('friendRequestDeclinedToast'), 'info');
+      onDeleteNotification(notifId);
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed', 'error');
+    }
+  };
 
   const toggleDark = () => {
     const next = !dark;
@@ -276,6 +303,22 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                   <div className="notif-item-content">
                     <div className="notif-item-message">{n.message}</div>
                     <div className="notif-item-time">{timeAgo(n.createdAt)}</div>
+                    {n.type === 'friend_request' && n.sender?._id && (
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                        <button
+                          className="btn btn-primary btn-small"
+                          onClick={() => handleAcceptFriend(n.sender._id, n._id)}
+                        >
+                          {t('acceptRequest')}
+                        </button>
+                        <button
+                          className="btn btn-outline btn-small"
+                          onClick={() => handleDeclineFriend(n.sender._id, n._id)}
+                        >
+                          {t('declineRequest')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <button
                     className="notif-delete-btn"

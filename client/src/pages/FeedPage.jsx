@@ -304,18 +304,24 @@ function FeedPage({ user }) {
       });
       setSuggestedGroups(nonMember.slice(0, 3));
 
-      // Suggested users: filter out self and existing friends.
-      // We fetch the user's own profile fresh from the API so the friends list is
-      // current — currentUser.friends comes from localStorage and is stale after
-      // any friend add/remove during the session.
+      // Suggested users: filter out self, existing friends, AND anyone we already
+      // sent a pending friend request to (otherwise they'd reappear and clicking
+      // "+ Add Friend" again would just error with "already sent").
+      // currentUser.friends comes from localStorage and is stale after any friend
+      // activity this session, so fetch a fresh copy from the API first.
       const allUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
       let freshFriendIds = new Set((user.friends || []).map(f => String(f._id || f)));
+      let freshPendingIds = new Set();
       try {
-        const meRes = await API.get(`/users/${user._id}`);
-        const freshFriends = meRes.data?.friends || [];
-        freshFriendIds = new Set(freshFriends.map(f => String(f._id || f)));
+        const meRes = await API.get('/users/me');
+        freshFriendIds = new Set((meRes.data?.friends || []).map(f => String(f._id || f)));
+        freshPendingIds = new Set((meRes.data?.friendRequestsSent || []).map(f => String(f._id || f)));
       } catch { /* keep the stale set if fetch fails */ }
-      const strangers = allUsers.filter(u => String(u._id) !== String(user._id) && !freshFriendIds.has(String(u._id)));
+      const strangers = allUsers.filter(u =>
+        String(u._id) !== String(user._id) &&
+        !freshFriendIds.has(String(u._id)) &&
+        !freshPendingIds.has(String(u._id))
+      );
       setSuggestedUsers(strangers.slice(0, 4)); // show at most 4
     } catch (err) {
       console.error(err);
@@ -367,7 +373,7 @@ function FeedPage({ user }) {
     setFriendLoading(friendId); // show spinner on that specific button
     try {
       await API.post(`/users/${user._id}/friend`, { friendId });
-      toast('Friend added!', 'success');
+      toast(t('friendRequestSentToast'), 'success');
       // Remove this user from suggestions
       setSuggestedUsers(prev => prev.filter(u => u._id !== friendId));
     } catch (err) {

@@ -75,7 +75,9 @@ function ProfilePage({ currentUser, onUserUpdate }) {
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   const isOwnProfile = id === currentUser._id;
-  const isFriend = profile?.friends?.some(f => String(f._id || f) === String(currentUser._id));
+  // Server computes this relative to the logged-in viewer: 'none' | 'pending_sent' |
+  // 'pending_received' | 'friends' | 'self'
+  const friendStatus = profile?.friendStatus || 'none';
 
   const loadProfile = async () => {
     try {
@@ -205,20 +207,39 @@ function ProfilePage({ currentUser, onUserUpdate }) {
     }
   };
 
+  // Sends a friend request (does not add either side to `friends` yet — the
+  // other person must Accept first, either here or from the notification bell).
   const handleAddFriend = async () => {
     try {
       await API.post(`/users/${currentUser._id}/friend`, { friendId: id });
-      toast('Friend added!', 'success');
+      toast(t('friendRequestSentToast'), 'success');
       loadProfile();
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
+  // Accepts a request THEY sent me (only relevant when friendStatus === 'pending_received').
+  const handleAcceptFriend = async () => {
+    try {
+      await API.post(`/users/${currentUser._id}/friend/accept`, { requesterId: id });
+      toast(t('friendRequestAcceptedToast'), 'success');
+      loadProfile();
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed', 'error');
+    }
+  };
+
+  // One endpoint covers all 3 "sever the relationship" cases — unfriend, cancel
+  // a request I sent, or decline a request they sent me — so the label just
+  // changes based on friendStatus while the call stays the same.
   const handleRemoveFriend = async () => {
     try {
       await API.delete(`/users/${currentUser._id}/friend`, { data: { friendId: id } });
-      toast('Friend removed', 'info');
+      const msg = friendStatus === 'pending_sent' ? t('friendRequestCanceledToast')
+        : friendStatus === 'pending_received' ? t('friendRequestDeclinedToast')
+        : 'Friend removed';
+      toast(msg, 'info');
       loadProfile();
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
@@ -361,13 +382,23 @@ function ProfilePage({ currentUser, onUserUpdate }) {
                 {isOwnProfile && (
                   <button className="btn btn-danger btn-small" onClick={handleDeleteAccount}>{t('deleteAccount')}</button>
                 )}
-                {!isOwnProfile && !isFriend && (
+                {!isOwnProfile && friendStatus === 'none' && (
                   <button className="btn btn-primary btn-small" onClick={handleAddFriend}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
                     {t('addFriend')}
                   </button>
                 )}
-                {!isOwnProfile && isFriend && (
+                {!isOwnProfile && friendStatus === 'pending_sent' && (
+                  <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>{t('cancelRequest')}</button>
+                )}
+                {!isOwnProfile && friendStatus === 'pending_received' && (
+                  <>
+                    <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', alignSelf: 'center' }}>{t('respondToRequest')}</span>
+                    <button className="btn btn-primary btn-small" onClick={handleAcceptFriend}>{t('acceptRequest')}</button>
+                    <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>{t('declineRequest')}</button>
+                  </>
+                )}
+                {!isOwnProfile && friendStatus === 'friends' && (
                   <button className="btn btn-outline btn-small" onClick={handleRemoveFriend}>{t('removeFriend')}</button>
                 )}
                 {!isOwnProfile && (

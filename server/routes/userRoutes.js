@@ -8,7 +8,8 @@ router.get('/me',        auth, ctrl.getMe);       // GET  /api/users/me      —
 router.get('/:id',       auth, ctrl.getById);     // GET  /api/users/:id     — get user profile
 router.put('/:id',       auth, ctrl.update);      // PUT  /api/users/:id     — update own profile
 router.delete('/:id',    auth, ctrl.remove);      // DELETE /api/users/:id  — delete own account
-router.post('/:id/friend',   auth, ctrl.addFriend);    // POST   /api/users/:id/friend — add friend
-router.delete('/:id/friend', auth, ctrl.removeFriend); // DELETE /api/users/:id/friend — remove friend
+router.post('/:id/friend',        auth, ctrl.addFriend);    // POST   /api/users/:id/friend        — send friend request
+router.post('/:id/friend/accept', auth, ctrl.acceptFriend); // POST   /api/users/:id/friend/accept — accept a pending request
+router.delete('/:id/friend',      auth, ctrl.removeFriend); // DELETE /api/users/:id/friend        — unfriend / cancel / decline
 
 module.exports = router;

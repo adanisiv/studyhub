@@ -11,7 +11,7 @@ const notificationSchema = new mongoose.Schema({
   // Type determines the icon and message template shown in the UI
   type:      {
     type: String,
-    enum: ['like', 'comment', 'friend_request', 'group_join', 'group_approved'],
+    enum: ['like', 'comment', 'friend_request', 'friend_accept', 'group_join', 'group_approved'],
     required: true
   },
 
