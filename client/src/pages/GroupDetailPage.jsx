@@ -7,6 +7,7 @@ import { useToast } from '../components/common/Toast';
 import { useConfirm } from '../components/common/ConfirmDialog';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useGroup, useGroupPosts, useGroupInvalidate } from '../hooks/useGroup';
+import { useScrollToPost } from '../hooks/useScrollToPost';
 
 function GroupDetailPage({ user }) {
   const { id } = useParams();
@@ -24,6 +25,9 @@ function GroupDetailPage({ user }) {
   const { data: group, isLoading: groupLoading, error: groupError } = useGroup(id);
   const { data: posts = [] } = useGroupPosts(id);
   const invalidate = useGroupInvalidate();
+
+  // Scroll to + highlight a specific post when arriving via a notification click (?post=<id>)
+  useScrollToPost(posts.length > 0);
 
   // Pre-fill edit form whenever group data loads
   useEffect(() => {

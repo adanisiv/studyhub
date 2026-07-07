@@ -329,21 +329,31 @@ exports.toggleLike = async (req, res) => {
     if (alreadyLiked) {
       // .pull() handles ObjectId-to-string casting internally — safe to pass a string
       post.likes.pull(req.userId);
+      // Note: we intentionally do NOT delete the like notification here.
+      // Combined with the dedupe below, this means like→unlike→like cycles
+      // produce exactly one notification total instead of one per click.
     } else {
       post.likes.push(req.userId);
 
-      // Notify the post author about the like (not if they liked their own post)
+      // Notify the post author about the like (not if they liked their own post).
+      // Deduped: repeated like/unlike cycles must not stack multiple notifications
+      // for the same (sender, post) pair.
       if (post.author.toString() !== req.userId) {
-        const User = require('../models/User');
-        const sender = await User.findById(req.userId);
-        if (sender) {
-          await notify(req, post.author.toString(), {
-            recipient: post.author,
-            sender: req.userId,
-            type: 'like',
-            message: `${sender.name} liked your post`,
-            post: post._id
-          });
+        const exists = await Notification.findOne({
+          recipient: post.author, sender: req.userId, type: 'like', post: post._id
+        });
+        if (!exists) {
+          const User = require('../models/User');
+          const sender = await User.findById(req.userId);
+          if (sender) {
+            await notify(req, post.author.toString(), {
+              recipient: post.author,
+              sender: req.userId,
+              type: 'like',
+              message: `${sender.name} liked your post`,
+              post: post._id
+            });
+          }
         }
       }
     }

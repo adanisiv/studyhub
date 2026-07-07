@@ -7,7 +7,8 @@ exports.list = async (req, res) => {
     const notifications = await Notification.find({ recipient: req.userId })
       .sort({ createdAt: -1 })         // newest first
       .limit(30)                        // cap at 30 to avoid large payloads
-      .populate('sender', 'name avatar'); // replace ObjectId with sender's name/avatar
+      .populate('sender', 'name avatar')  // replace ObjectId with sender's name/avatar
+      .populate('post', 'group');         // post's group id — used for click-to-navigate
     res.json(notifications);
   } catch (err) {
     res.status(500).json({ error: err.message });

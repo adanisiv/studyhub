@@ -7,6 +7,7 @@ import PostForm from '../components/common/PostForm';
 import { useToast } from '../components/common/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useFeed } from '../hooks/useFeed';
+import { useScrollToPost } from '../hooks/useScrollToPost';
 // Skeletons are placeholder elements with an animated shimmer.
 // They show while content loads, preventing layout shifts and giving visual feedback.
 
@@ -265,6 +266,9 @@ function FeedPage({ user }) {
 
   // Flatten pages: each page has a `posts` array
   const posts = data?.pages.flatMap(p => p.posts) ?? [];
+
+  // Scroll to + highlight a specific post when arriving via a notification click (?post=<id>)
+  useScrollToPost(!loadingInitial && posts.length > 0);
 
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from './Toast';
 import API from '../../api/axios';
@@ -16,6 +16,7 @@ const TYPE_ICON = {
 function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onDeleteNotification, activity }) {
   const toast = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const { t, lang, setLang } = useLanguage();
   const isActive = (path) => location.pathname === path ? 'nav-link active' : 'nav-link';
 
@@ -47,6 +48,27 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
       onDeleteNotification(notifId);
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
+    }
+  };
+
+  // Clicking a notification navigates to what it refers to:
+  //   like/comment  → the post (its group feed, or the main feed) with ?post= for scroll+highlight
+  //   friend events → the sender's profile
+  //   group events  → the group page
+  const handleNotifClick = (n) => {
+    let target = null;
+    if (n.post) {
+      const postId = n.post._id || n.post;
+      const groupId = n.post.group;
+      target = groupId ? `/groups/${groupId}?post=${postId}` : `/?post=${postId}`;
+    } else if (n.type === 'friend_request' || n.type === 'friend_accept') {
+      if (n.sender?._id) target = `/profile/${n.sender._id}`;
+    } else if (n.group) {
+      target = `/groups/${n.group._id || n.group}`;
+    }
+    if (target) {
+      setNotifOpen(false);
+      navigate(target);
     }
   };
 
@@ -296,7 +318,12 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               </div>
             ) : (
               notifications.map(n => (
-                <div key={n._id} className={`notif-item ${!n.read ? 'unread' : ''}`}>
+                <div
+                  key={n._id}
+                  className={`notif-item ${!n.read ? 'unread' : ''}`}
+                  onClick={() => handleNotifClick(n)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className={`notif-item-type-icon notif-type-${n.type?.split('_')[0]}`}>
                     {TYPE_ICON[n.type] || '🔔'}
                   </div>
@@ -307,13 +334,13 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                       <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
                         <button
                           className="btn btn-primary btn-small"
-                          onClick={() => handleAcceptFriend(n.sender._id, n._id)}
+                          onClick={(e) => { e.stopPropagation(); handleAcceptFriend(n.sender._id, n._id); }}
                         >
                           {t('acceptRequest')}
                         </button>
                         <button
                           className="btn btn-outline btn-small"
-                          onClick={() => handleDeclineFriend(n.sender._id, n._id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeclineFriend(n.sender._id, n._id); }}
                         >
                           {t('declineRequest')}
                         </button>
@@ -322,7 +349,7 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                   </div>
                   <button
                     className="notif-delete-btn"
-                    onClick={() => onDeleteNotification(n._id)}
+                    onClick={(e) => { e.stopPropagation(); onDeleteNotification(n._id); }}
                     aria-label="Dismiss notification"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

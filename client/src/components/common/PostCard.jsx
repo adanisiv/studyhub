@@ -144,7 +144,7 @@ function PostCard({ post, currentUserId, onUpdate, onDelete }) {
 
   return (
     // <article> is semantically correct for a self-contained piece of content
-    <article className={`post-card ${typeClass}`} ref={cardRef}>
+    <article className={`post-card ${typeClass}`} ref={cardRef} id={`post-${post._id}`}>
 
       {/* ── Post header: avatar, author name, date, group ─────────────── */}
       <div className="post-header">

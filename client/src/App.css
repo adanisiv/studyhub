@@ -2594,3 +2594,13 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .notif-time {
   color: var(--text-tertiary);
 }
+
+/* Flash highlight on a post reached via a notification click (?post=<id>) */
+@keyframes postHighlightFade {
+  0%   { box-shadow: 0 0 0 3px var(--accent-500); background: var(--accent-glow); }
+  70%  { box-shadow: 0 0 0 3px var(--accent-500); background: var(--accent-glow); }
+  100% { box-shadow: none; background: var(--bg-card); }
+}
+.post-highlight {
+  animation: postHighlightFade 2.5s ease-out;
+}
