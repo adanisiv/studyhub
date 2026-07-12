@@ -297,15 +297,14 @@ function FeedPage({ user }) {
       setTrending(trendingRes.data);
 
       // Suggested groups: filter out groups the user is already a member of,
-      // then sort so groups from the user's own department appear first
+      // AND restrict to the user's own department — a Computer Science student
+      // shouldn't see Pharmacy/Law/Medicine groups suggested to them.
       const allGroups = Array.isArray(groupsRes.data) ? groupsRes.data : [];
-      const nonMember = allGroups.filter(g => !g.members?.some(m => String(m._id || m) === String(user._id)));
       const userDept = (user.department || '').toLowerCase();
-      nonMember.sort((a, b) => {
-        const aMatch = (a.department || '').toLowerCase() === userDept ? -1 : 0;
-        const bMatch = (b.department || '').toLowerCase() === userDept ? -1 : 0;
-        return aMatch - bMatch;
-      });
+      const nonMember = allGroups.filter(g =>
+        !g.members?.some(m => String(m._id || m) === String(user._id)) &&
+        (g.department || '').toLowerCase() === userDept
+      );
       setSuggestedGroups(nonMember.slice(0, 3));
 
       // Suggested users: filter out self, existing friends, AND anyone we already

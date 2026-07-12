@@ -11,9 +11,17 @@ function GroupsPage({ user }) {
   const [error, setError] = useState('');
   const [joinLoading, setJoinLoading] = useState(null);
   const toast = useToast();
-  const { data: groups = [], isLoading: loading } = useGroups();
+  const { data: allGroups = [], isLoading: loading } = useGroups();
   const invalidateGroups = useGroupsInvalidate();
   const { t } = useLanguage();
+
+  // Default to the student's own department — a Computer Science student
+  // shouldn't be shown Pharmacy/Law/Medicine groups by default. "All" is one
+  // click away for anyone who actually wants to browse other departments.
+  const [deptFilter, setDeptFilter] = useState(user.department || 'all');
+  const groups = deptFilter === 'all'
+    ? allGroups
+    : allGroups.filter(g => (g.department || '').toLowerCase() === deptFilter.toLowerCase());
 
   // Sends form data to POST /api/groups.
   // On success: hides form, resets fields, shows toast, reloads list.
@@ -59,8 +67,20 @@ function GroupsPage({ user }) {
         <div>
           <h1 className="page-title" style={{ marginBottom: 0 }}>{t('groups')}</h1>
         </div>
-        {/* The button shows an X icon when the form is open, a + icon when closed */}
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+          {/* Department filter — defaults to the student's own department */}
+          <select
+            className="form-input"
+            style={{ width: 'auto', fontSize: 'var(--text-sm)' }}
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            aria-label={t('filterByDepartment')}
+          >
+            {user.department && <option value={user.department}>{t('myDepartment')} ({user.department})</option>}
+            <option value="all">{t('allDepartments')}</option>
+          </select>
+          {/* The button shows an X icon when the form is open, a + icon when closed */}
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
           {showForm ? (
             <>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -72,7 +92,8 @@ function GroupsPage({ user }) {
               {t('newGroup')}
             </>
           )}
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* ── Group creation form ──────────────────────────────────────────── */}
@@ -161,9 +182,19 @@ function GroupsPage({ user }) {
               <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
             </svg>
           </div>
-          <div className="empty-state-title">{t('noGroupsYet')}</div>
-          <div className="empty-state-text">{t('noGroupsDesc')}</div>
-          <button className="btn btn-primary btn-small" onClick={() => setShowForm(true)}>{t('createGroup')}</button>
+          {allGroups.length > 0 && deptFilter !== 'all' ? (
+            <>
+              <div className="empty-state-title">{t('noGroupsInDept')}</div>
+              <div className="empty-state-text">{t('noGroupsInDeptDesc')}</div>
+              <button className="btn btn-outline btn-small" onClick={() => setDeptFilter('all')}>{t('allDepartments')}</button>
+            </>
+          ) : (
+            <>
+              <div className="empty-state-title">{t('noGroupsYet')}</div>
+              <div className="empty-state-text">{t('noGroupsDesc')}</div>
+              <button className="btn btn-primary btn-small" onClick={() => setShowForm(true)}>{t('createGroup')}</button>
+            </>
+          )}
         </div>
       ) : (
         // CSS3 multi-column masonry layout — cards fill columns top-to-bottom automatically
