@@ -1,4 +1,4 @@
-const CACHE = 'studyhub-v1';
+const CACHE = 'studyhub-v2'; // bumped to force-evict the old cached (purple) icon.svg + stale JS/CSS
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
