@@ -90,12 +90,18 @@ app.post('/api/upload', auth, upload.single('media'), (req, res) => {
   if (req.file.mimetype.startsWith('image/')) mediaType = 'image';
   else if (req.file.mimetype.startsWith('video/')) mediaType = 'video';
 
+  // multer/busboy decodes multipart filename headers as latin1 even though
+  // modern browsers send them as UTF-8 bytes — a well-known upstream quirk.
+  // Re-decoding latin1→utf8 recovers non-Latin filenames (Hebrew, etc.)
+  // instead of showing mojibake like "×××¨× ×¢×...".
+  const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+
   // Return all info the client needs to display/link the file correctly
   res.json({
     url,
     filename: req.file.filename,          // the hashed server filename
     mediaType,
-    originalName: req.file.originalname  // the original filename (e.g. "homework.docx")
+    originalName  // the original filename (e.g. "homework.docx"), UTF-8 corrected
   });
 });
 
