@@ -375,7 +375,16 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               </div>
             ) : (
               activity.map((a, i) => (
-                <div key={i} className="notif-item">
+                <div
+                  key={i}
+                  className="notif-item"
+                  onClick={() => {
+                    if (!a.postId) return;
+                    setNotifOpen(false);
+                    navigate(a.postGroup ? `/groups/${a.postGroup}?post=${a.postId}` : `/?post=${a.postId}`);
+                  }}
+                  style={{ cursor: a.postId ? 'pointer' : 'default' }}
+                >
                   {/* Type icon */}
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%',
@@ -391,17 +400,21 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
                     )}
                   </div>
 
-                  {/* Content */}
+                  {/* Content — Activity = things YOU did (mirror of Notifications,
+                      which shows what others did to you), so `a.user` here is the
+                      post's AUTHOR, not the actor. */}
                   <div className="notif-item-content" style={{ minWidth: 0 }}>
                     <div className="notif-item-message">
+                      {a.type === 'like' ? t('youLikedPost') : t('youCommentedOnPost')}
+                      {' '}
                       <Link
                         to={`/profile/${a.user._id}`}
                         style={{ fontWeight: 600, color: 'var(--text-primary)' }}
-                        onClick={() => setNotifOpen(false)}
+                        onClick={(e) => { e.stopPropagation(); setNotifOpen(false); }}
                       >
                         {a.user.name}
                       </Link>
-                      {' '}{a.type === 'like' ? t('likedYourPost') : t('commentedOnYourPost')}
+                      {t('postSuffix')}
                       {a.type === 'comment' && a.text && (
                         <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
                           {' '}— "{a.text.length > 60 ? a.text.slice(0, 60) + '…' : a.text}"

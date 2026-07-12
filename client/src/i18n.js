@@ -166,9 +166,12 @@ export const translations = {
     allCaughtUp: 'All caught up!',
     noNotificationsYet: 'No notifications yet.',
     noActivityYet: 'No activity yet',
-    activityDesc: 'When people like or comment on your posts it will appear here.',
+    activityDesc: 'Posts you like or comment on will appear here.',
     likedYourPost: 'liked your post',
     commentedOnYourPost: 'commented on your post',
+    youLikedPost: "You liked",
+    youCommentedOnPost: "You commented on",
+    postSuffix: "'s post",
 
     // Chat
     chat: 'Chat',
@@ -402,9 +405,12 @@ export const translations = {
     allCaughtUp: 'אין חדשות!',
     noNotificationsYet: 'אין התראות עדיין.',
     noActivityYet: 'אין פעילות עדיין',
-    activityDesc: 'כשאנשים מלייקים או מגיבים על הפוסטים שלך זה יופיע כאן.',
+    activityDesc: 'פוסטים שאהבת או הגבת עליהם יופיעו כאן.',
     likedYourPost: 'אהב את הפוסט שלך',
     commentedOnYourPost: 'הגיב על הפוסט שלך',
+    youLikedPost: 'עשית לייק לפוסט של',
+    youCommentedOnPost: 'הגבת על הפוסט של',
+    postSuffix: '',
 
     // Chat
     chat: 'צ\'אט',

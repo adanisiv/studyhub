@@ -128,47 +128,57 @@ exports.postTypes = async (req, res) => {
   }
 };
 
-// Returns a flat activity stream of the most recent likes + comments OTHER users
-// left on this user's posts. Each entry has type, user, postPreview, and when.
+// Returns a flat stream of engagement THIS user gave to OTHER people's posts —
+// posts they liked and comments they wrote. This is deliberately the mirror
+// image of the Notifications bell (which shows what others did to YOUR posts):
+// Activity = "what you've been doing", Notifications = "what happened to you".
+// Keeping these two sources distinct is what makes the tabs worth having —
+// they used to both surface the same like/comment events and looked identical.
 exports.userActivity = async (req, res) => {
   try {
-    const mongoose = require('mongoose');
-    const userIdStr = String(req.params.userId);
+    const userId = req.params.userId;
 
-    const posts = await Post.find({ author: req.params.userId })
-      .sort({ createdAt: -1 })
-      .limit(30)
-      .populate('likes', 'name avatar')
-      .populate('comments.author', 'name avatar')
-      .select('content likes comments createdAt');
+    const [likedPosts, commentedPosts] = await Promise.all([
+      Post.find({ likes: userId, author: { $ne: userId } })
+        .sort({ updatedAt: -1 })
+        .limit(20)
+        .populate('author', 'name avatar')
+        .select('content author updatedAt group'),
+      Post.find({ 'comments.author': userId, author: { $ne: userId } })
+        .sort({ updatedAt: -1 })
+        .limit(20)
+        .populate('author', 'name avatar')
+        .select('content author comments group')
+    ]);
 
     const activity = [];
-    posts.forEach(p => {
-      (p.likes || []).forEach(liker => {
-        if (!liker) return;
-        const actorId = String(liker._id || liker);
-        if (actorId === userIdStr) return; // skip self-likes
-        activity.push({
-          type: 'like',
-          user: { _id: liker._id, name: liker.name, avatar: liker.avatar },
-          postId: p._id,
-          postPreview: (p.content || '').slice(0, 80),
-          when: p.createdAt
-        });
+    likedPosts.forEach(p => {
+      if (!p.author) return;
+      activity.push({
+        type: 'like',
+        user: { _id: p.author._id, name: p.author.name, avatar: p.author.avatar },
+        postId: p._id,
+        postGroup: p.group,
+        postPreview: (p.content || '').slice(0, 80),
+        when: p.updatedAt
       });
-      (p.comments || []).forEach(c => {
-        if (!c.author) return;
-        const actorId = String(c.author._id || c.author);
-        if (actorId === userIdStr) return; // skip self-comments
-        activity.push({
-          type: 'comment',
-          user: { _id: c.author._id, name: c.author.name, avatar: c.author.avatar },
-          postId: p._id,
-          postPreview: (p.content || '').slice(0, 80),
-          text: c.text,
-          when: c.createdAt
+    });
+    commentedPosts.forEach(p => {
+      if (!p.author) return;
+      // A post can hold several of my own comments — surface each one separately
+      (p.comments || [])
+        .filter(c => String(c.author) === String(userId))
+        .forEach(c => {
+          activity.push({
+            type: 'comment',
+            user: { _id: p.author._id, name: p.author.name, avatar: p.author.avatar },
+            postId: p._id,
+            postGroup: p.group,
+            postPreview: (p.content || '').slice(0, 80),
+            text: c.text,
+            when: c.createdAt
+          });
         });
-      });
     });
 
     activity.sort((a, b) => new Date(b.when) - new Date(a.when));
