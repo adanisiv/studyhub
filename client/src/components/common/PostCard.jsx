@@ -9,7 +9,7 @@ import EmojiPicker from './EmojiPicker';
 // Pre-defined color classes for the avatar background.
 // The color is picked based on the first character of the author's name,
 // so the same user always gets the same color across all their posts.
-const AVATAR_COLORS = ['', 'avatar-green', 'avatar-blue', 'avatar-amber', 'avatar-purple'];
+const AVATAR_COLORS = ['', 'avatar-green', 'avatar-blue', 'avatar-amber'];
 
 function PostCard({ post, currentUserId, onUpdate, onDelete }) {
   const [editing, setEditing] = useState(false);           // inline edit mode
