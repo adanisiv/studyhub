@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useToast } from '../components/common/Toast';
 
 function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +21,12 @@ function LoginPage({ onLogin }) {
       const res = await API.post('/auth/login', { email, password });
       onLogin(res.data.user, res.data.token);
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      // Some failures (network drop, server down, unexpected response shape)
+      // don't come with a response body — always fall back to a message so
+      // the user is never left with silence on a failed login.
+      const msg = err.response?.data?.error || 'Login failed';
+      setError(msg);
+      toast(msg, 'error'); // second channel — visible even if the inline text is missed
     }
     setLoading(false);
   };
@@ -56,16 +64,31 @@ function LoginPage({ onLogin }) {
             </div>
             <div className="form-group">
               <label htmlFor="login-password">{t('password')}</label>
-              <input
-                id="login-password"
-                className="form-input"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={t('enterPassword')}
-                required
-                autoComplete="current-password"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="login-password"
+                  className="form-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={t('enterPassword')}
+                  required
+                  autoComplete="current-password"
+                  style={{ paddingRight: 40 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex', padding: 4 }}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && <p className="error-text" role="alert">{error}</p>}

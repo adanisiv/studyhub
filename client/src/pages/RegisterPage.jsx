@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useToast } from '../components/common/Toast';
 
 function RegisterPage({ onLogin }) {
   const [form, setForm] = useState({
@@ -11,9 +12,11 @@ function RegisterPage({ onLogin }) {
     department: '',
     year: 1
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
+  const toast = useToast();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,7 +30,9 @@ function RegisterPage({ onLogin }) {
       const res = await API.post('/auth/register', form);
       onLogin(res.data.user, res.data.token);
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
+      const msg = err.response?.data?.error || 'Registration failed';
+      setError(msg);
+      toast(msg, 'error');
     }
     setLoading(false);
   };
@@ -64,8 +69,22 @@ function RegisterPage({ onLogin }) {
 
             <div className="form-group">
               <label htmlFor="reg-password">{t('password')}</label>
-              <input id="reg-password" className="form-input" name="password" type="password" value={form.password}
-                onChange={handleChange} placeholder={t('minChars')} required minLength={6} autoComplete="new-password" />
+              <div style={{ position: 'relative' }}>
+                <input id="reg-password" className="form-input" name="password" type={showPassword ? 'text' : 'password'} value={form.password}
+                  onChange={handleChange} placeholder={t('minChars')} required minLength={6} autoComplete="new-password" style={{ paddingRight: 40 }} />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex', padding: 4 }}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-3)' }}>
