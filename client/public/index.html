@@ -55,12 +55,8 @@
 </head>
 <body>
   <div id="root"></div>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      });
-    }
-  </script>
+  <!-- Service worker (de)registration lives in src/index.js instead of here —
+       it needs process.env.NODE_ENV, which only exists inside the bundled JS,
+       to register in production but actively unregister in development. -->
 </body>
 </html>
