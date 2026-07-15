@@ -2,6 +2,11 @@
 const ctrl = require('../controllers/postController');
 const auth = require('../middleware/auth');
 const { createPostRules } = require('../middleware/validate'); // validates content, type, tags
+const validateObjectId = require('../middleware/validateObjectId');
+
+// Reject malformed ObjectIds early (→ 400) instead of letting them reach
+// Mongoose and surface as a confusing 500. Guards every :param below.
+['id', 'userId', 'groupId', 'postId', 'commentId'].forEach(p => router.param(p, validateObjectId));
 
 // Post CRUD
 router.post('/',               auth, createPostRules, ctrl.create);  // POST   /api/posts       — create

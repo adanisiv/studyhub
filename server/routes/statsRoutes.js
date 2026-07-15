@@ -1,6 +1,10 @@
 ﻿const router = require('express').Router();
 const ctrl = require('../controllers/statsController');
 const auth = require('../middleware/auth');
+const validateObjectId = require('../middleware/validateObjectId');
+
+// Reject malformed :userId early (→ 400) before it reaches the aggregation.
+router.param('userId', validateObjectId);
 
 router.get('/dashboard',       auth, ctrl.dashboard);      // GET /api/stats/dashboard       — 4 summary counts
 router.get('/trending',        auth, ctrl.trending);       // GET /api/stats/trending        — trending tags + top groups

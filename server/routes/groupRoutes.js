@@ -2,6 +2,10 @@
 const ctrl = require('../controllers/groupController');
 const auth = require('../middleware/auth');
 const { createGroupRules } = require('../middleware/validate'); // validates group name, year, semester
+const validateObjectId = require('../middleware/validateObjectId');
+
+// Reject malformed ObjectIds early (→ 400). /search is defined before /:id.
+router.param('id', validateObjectId);
 
 router.post('/',            auth, createGroupRules, ctrl.create);  // POST   /api/groups       — create group
 router.get('/',             auth, ctrl.list);                      // GET    /api/groups       — list groups

@@ -31,6 +31,9 @@ exports.postsPerMonth = async (req, res) => {
     if (req.query.groupId) {
       // Convert groupId string to ObjectId for matching against the group field
       const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(req.query.groupId)) {
+        return res.status(400).json({ error: 'Invalid group ID format' });
+      }
       match.group = new mongoose.Types.ObjectId(req.query.groupId);
     }
 
@@ -75,6 +78,9 @@ exports.dailyActivity = async (req, res) => {
     const match = { createdAt: { $gte: since } };
     if (req.query.groupId) {
       const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(req.query.groupId)) {
+        return res.status(400).json({ error: 'Invalid group ID format' });
+      }
       match.group = new mongoose.Types.ObjectId(req.query.groupId);
     }
 
@@ -113,6 +119,9 @@ exports.postTypes = async (req, res) => {
     const match = {};
     if (req.query.groupId) {
       const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(req.query.groupId)) {
+        return res.status(400).json({ error: 'Invalid group ID format' });
+      }
       match.group = new mongoose.Types.ObjectId(req.query.groupId);
     }
 

@@ -1,6 +1,11 @@
 ﻿const router = require('express').Router();
 const ctrl = require('../controllers/userController');
 const auth = require('../middleware/auth');
+const validateObjectId = require('../middleware/validateObjectId');
+
+// Reject malformed ObjectIds early (→ 400). /me and /search are defined
+// before /:id, so those literal routes are unaffected.
+router.param('id', validateObjectId);
 
 router.get('/',          auth, ctrl.list);        // GET  /api/users         — list all users (excl. self)
 router.get('/search',    auth, ctrl.search);      // GET  /api/users/search  — filter by name/dept/year
