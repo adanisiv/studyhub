@@ -37,7 +37,19 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
       toast(t('friendRequestAcceptedToast'), 'success');
       onDeleteNotification(notifId);
     } catch (err) {
-      toast(err.response?.data?.error || 'Failed', 'error');
+      // A friend_request notification can outlive the request it refers to —
+      // e.g. it was already accepted/declined elsewhere, or (for older seeded
+      // data) it predates the request-based friend system entirely and never
+      // had a real pending request behind it. The server correctly rejects
+      // accepting/declining something that isn't pending; the fix here is to
+      // clear the now-meaningless notification instead of leaving a
+      // permanently broken Accept button in the bell.
+      if (err.response?.status === 400) {
+        toast(t('requestNoLongerAvailable'), 'info');
+        onDeleteNotification(notifId);
+      } else {
+        toast(err.response?.data?.error || 'Failed', 'error');
+      }
     }
   };
 
@@ -48,6 +60,10 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
       onDeleteNotification(notifId);
     } catch (err) {
       toast(err.response?.data?.error || 'Failed', 'error');
+      // Decline (unfriend/cancel/decline) is designed to be a safe no-op even
+      // on stale state, so a failure here is a genuine error — but still
+      // clear the notification so a broken one doesn't stay stuck forever.
+      onDeleteNotification(notifId);
     }
   };
 
