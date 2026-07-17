@@ -1,5 +1,7 @@
-﻿// Load environment variables from .env file (MONGO_URI, JWT_SECRET, PORT)
-require('dotenv').config();
+﻿// Load environment variables from .env file (MONGO_URI, JWT_SECRET, PORT).
+// Resolved relative to this file (not process.cwd()) so it works regardless
+// of the directory the process was launched from.
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const express = require('express');
 const http = require('http');
