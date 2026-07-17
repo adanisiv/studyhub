@@ -18,7 +18,7 @@ start "Server" cmd /k "cd /d C:\Users\adanisiv\studyhub-run\server && npm start"
 timeout /t 3 /nobreak >nul
 
 echo [3/3] Starting Client (port 3000)...
-start "Client" cmd /k "cd /d C:\Users\adanisiv\studyhub-run\client && npm run dev"
+start "Client" cmd /k "cd /d C:\Users\adanisiv\studyhub-run\client && npm start"
 timeout /t 4 /nobreak >nul
 
 echo.
