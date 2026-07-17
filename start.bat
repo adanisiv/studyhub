@@ -5,7 +5,12 @@ echo ========================================
 echo.
 
 echo [1/3] Starting MongoDB...
-start "MongoDB" cmd /k "mongod"
+where mongod >nul 2>nul
+if %errorlevel%==0 (
+  start "MongoDB" cmd /k "mongod"
+) else (
+  start "MongoDB" cmd /k ""C:\Program Files\MongoDB\Server\8.3\bin\mongod.exe" --dbpath "C:\data\db""
+)
 timeout /t 3 /nobreak >nul
 
 echo [2/3] Starting Server (port 5000)...
