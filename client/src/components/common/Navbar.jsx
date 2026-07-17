@@ -158,6 +158,11 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               {t('search')}
             </Link>
+            {/* /chat/:friendId is also "on" this tab, so match by prefix instead of exact path */}
+            <Link to="/chat" className={location.pathname.startsWith('/chat') ? 'nav-link active' : 'nav-link'} role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              {t('messagesTitle')}
+            </Link>
             <Link to="/stats" className={isActive('/stats')} role="menuitem">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
               {t('stats')}
