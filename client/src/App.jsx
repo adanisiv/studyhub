@@ -83,8 +83,12 @@ function App() {
       setUnreadCount(prev => prev + 1);            // increment the badge
     });
 
-    // Cleanup: disconnect when user logs out or component unmounts
-    return () => { socket.disconnect(); socket = null; };
+    // Cleanup: disconnect when user logs out or component unmounts.
+    // Guarded because logout() may have already disconnected and nulled
+    // the module-level `socket` synchronously before this cleanup runs
+    // (setUser(null) → re-render → this effect's dependency changes →
+    // cleanup fires as a passive effect, after logout() already ran).
+    return () => { if (socket) { socket.disconnect(); socket = null; } };
   }, [user]); // re-run when user changes (login/logout)
   // Fetches existing notifications + unread count + activity stream when the user logs in.
   // Real-time notifications (above) only deliver NEW ones while online.
@@ -134,7 +138,9 @@ function App() {
     });
   };
 
-  // logout — clears all auth state and disconnects socket
+  // logout — clears auth state. setUser(null) alone is enough to disconnect
+  // the socket too: it changes the socket effect's dependency, so React runs
+  // that effect's cleanup, which owns the disconnect (see effect above).
   const logout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
@@ -142,7 +148,6 @@ function App() {
     setNotifications([]);
     setUnreadCount(0);
     setActivity([]);
-    if (socket) { socket.disconnect(); socket = null; }
   };
   // Redirects unauthenticated users to /login.
   // Defined inside App so it has access to the 'user' state.
