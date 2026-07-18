@@ -1,15 +1,15 @@
 ﻿/* ============================================
-   StudyHub ג€” Design System & Global Styles
+   StudyHub — Design System & Global Styles
    CSS3 features used (course requirement):
-   1. @font-face        ג†’ in index.html (Plus Jakarta Sans font)
-   2. border-radius     ג†’ everywhere (.card, .btn, .avatar, etc.)
-   3. text-shadow       ג†’ .page-title, .auth-bg-text
-   4. transition        ג†’ .btn, .card, .nav-link, .post-card
-   5. multiple-columns  ג†’ .columns-layout
+   1. @font-face        → in index.html (Plus Jakarta Sans font)
+   2. border-radius     → everywhere (.card, .btn, .avatar, etc.)
+   3. text-shadow       → .page-title, .auth-bg-text
+   4. transition        → .btn, .card, .nav-link, .post-card
+   5. multiple-columns  → .columns-layout
    ============================================ */
 
 /* ===========================================
-   DESIGN SYSTEM ג€” CSS Custom Properties
+   DESIGN SYSTEM — CSS Custom Properties
    =========================================== */
 
 :root {
@@ -808,7 +808,7 @@ a:hover { text-decoration: underline; }
   margin-bottom: var(--space-5);
   color: var(--text-primary);
   letter-spacing: -0.3px;
-  text-shadow: none;                                       /* CSS3: text-shadow ג€” clean modern look */
+  text-shadow: none;                                       /* CSS3: text-shadow — clean modern look */
 }
 
 .page-subtitle {
@@ -1106,7 +1106,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 @media (max-width: 600px) { .columns-layout { column-count: 1; } }
 
 /* ===========================================
-   CHAT ג€” redesigned
+   CHAT — redesigned
    =========================================== */
 
 /* Full-page layout (no .main wrapper) */
@@ -1685,7 +1685,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   position: relative;
   overflow: hidden;
 }
-/* decorative background text ג€” CSS3: text-shadow */
+/* decorative background text — CSS3: text-shadow */
 .auth-page::before {
   content: 'StudyHub';
   position: absolute;
