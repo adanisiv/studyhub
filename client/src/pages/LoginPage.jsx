@@ -89,6 +89,9 @@ function LoginPage({ onLogin }) {
                   )}
                 </button>
               </div>
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <Link to="/forgot-password" style={{ fontSize: 'var(--text-xs)' }}>{t('forgotPasswordLink')}</Link>
+              </div>
             </div>
 
             {error && <p className="error-text" role="alert">{error}</p>}

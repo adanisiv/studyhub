@@ -1,4 +1,5 @@
 ﻿const jwt = require('jsonwebtoken');
+const crypto = require('crypto'); // Node's built-in crypto — no new dependency needed
 const User = require('../models/User');
 
 // Creates a signed token containing the user's ID and role.
@@ -70,6 +71,81 @@ exports.login = async (req, res) => {
     // Credentials are correct — issue a new token
     const token = generateToken(user);
     res.json({ user, token }); // user.toJSON() removes the password field
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Step 1 of the forgot-password flow: given an email, generate a one-time
+// reset token and store only its SHA-256 hash (mirrors why we bcrypt the
+// password itself — a leaked database shouldn't hand out usable tokens).
+//
+// This project has no email service wired up. In production, `rawToken`
+// would be emailed as a reset link and would never appear in the API
+// response at all — returning it here is a local-demo-only shortcut, and
+// it does mean this endpoint reveals whether an email is registered
+// (the response includes devResetToken only when an account was found).
+// That's an acceptable trade-off for a course project with no real users;
+// a production version would queue the email and always return the same
+// generic response regardless of whether the account exists.
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.json({ message: 'If an account exists for this email, a reset link has been generated.' });
+    }
+
+    // A random 32-byte token, hex-encoded — this is what would go in the emailed link.
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    // Only the hash is persisted, same reasoning as bcrypt-ing the password.
+    user.resetPasswordTokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // valid for 1 hour
+    await user.save();
+
+    res.json({
+      message: 'If an account exists for this email, a reset link has been generated.',
+      devResetToken: rawToken // dev-only — see comment above
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Step 2 of the forgot-password flow: exchange a valid, unexpired token for
+// a new password. Hashes the incoming token the same way it was hashed at
+// generation time, then looks for a user whose stored hash matches AND
+// whose expiry hasn't passed — MongoDB's $gt comparison does the "is this
+// still valid" check in the same query as the lookup.
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+    if (!user) {
+      return res.status(400).json({ error: 'This reset link is invalid or has expired' });
+    }
+
+    // Setting .password triggers the pre('save') hook, which bcrypt-hashes it.
+    user.password = newPassword;
+    // Single-use: clear the token so this same link can't be replayed.
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.json({ message: 'Password has been reset. You can now log in.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -18,6 +18,8 @@ import Navbar from './components/common/Navbar';
 import { LanguageProvider } from './contexts/LanguageContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import FeedPage from './pages/FeedPage';
 import GroupsPage from './pages/GroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
@@ -187,6 +189,12 @@ function App() {
                 } />
                 <Route path="/register" element={
                   user ? <Navigate to="/" /> : <RegisterPage onLogin={login} />
+                } />
+                <Route path="/forgot-password" element={
+                  user ? <Navigate to="/" /> : <ForgotPasswordPage />
+                } />
+                <Route path="/reset-password" element={
+                  user ? <Navigate to="/" /> : <ResetPasswordPage />
                 } />
 
                 {/* ── App pages: wrapped in .main for layout ── */}

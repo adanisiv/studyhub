@@ -46,6 +46,24 @@ const loginRules = [
 
   handleValidation
 ];
+const forgotPasswordRules = [
+  body('email')
+    .trim()
+    .isEmail().withMessage('Valid email is required')
+    .normalizeEmail(),
+
+  handleValidation
+];
+const resetPasswordRules = [
+  body('token')
+    .trim()
+    .notEmpty().withMessage('Reset token is required'),
+
+  body('newPassword')
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+
+  handleValidation
+];
 const createGroupRules = [
   body('name')
     .trim()
@@ -84,4 +102,4 @@ const createPostRules = [
   handleValidation
 ];
 
-module.exports = { registerRules, loginRules, createGroupRules, createPostRules };
+module.exports = { registerRules, loginRules, forgotPasswordRules, resetPasswordRules, createGroupRules, createPostRules };

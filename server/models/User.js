@@ -18,7 +18,14 @@ const userSchema = new mongoose.Schema({
   // received: people who asked THIS user to be friends (awaiting a response)
   friendRequestsSent:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   friendRequestsReceived: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  role:       { type: String, enum: ['student', 'admin'], default: 'student' }
+  role:       { type: String, enum: ['student', 'admin'], default: 'student' },
+
+  // Forgot-password flow. We never store the raw reset token (same principle
+  // as the password itself) — only a SHA-256 hash of it, so a database leak
+  // doesn't hand out usable reset links. resetPasswordExpires makes the token
+  // single-use in time; it's cleared the moment the password is actually reset.
+  resetPasswordTokenHash: { type: String, default: null },
+  resetPasswordExpires:   { type: Date, default: null }
 }, { timestamps: true }); // adds createdAt + updatedAt
 // Indexes speed up queries. Without them, MongoDB does a full collection scan.
 
@@ -56,6 +63,8 @@ userSchema.methods.comparePassword = function (candidatePassword) {
 userSchema.methods.toJSON = function () {
   const obj = this.toObject(); // convert Mongoose document to plain JS object
   delete obj.password;         // remove the hashed password field
+  delete obj.resetPasswordTokenHash; // never expose the reset-token hash either
+  delete obj.resetPasswordExpires;
   return obj;
 };
 
