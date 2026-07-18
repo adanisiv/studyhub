@@ -1,6 +1,7 @@
 ﻿const jwt = require('jsonwebtoken');
 const crypto = require('crypto'); // Node's built-in crypto — no new dependency needed
 const User = require('../models/User');
+const mailer = require('../utils/mailer');
 
 // Creates a signed token containing the user's ID and role.
 // The token expires in 7 days; after that the user must log in again.
@@ -80,9 +81,10 @@ exports.login = async (req, res) => {
 // SHA-256 hash — a leaked database must not contain usable tokens, the same
 // reason the password itself is bcrypt-hashed.
 //
-// No email service is configured in this project, so the raw token is returned
-// in the response (devResetToken) for the client to present as a link. In
-// production it would be emailed instead and never included in the response.
+// If EMAIL_USER/EMAIL_PASS are configured (see utils/mailer.js), the link is
+// emailed and never appears in the response. Otherwise it falls back to
+// returning the raw token as devResetToken so the flow still works without
+// an email account configured.
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -100,9 +102,25 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // valid for 1 hour
     await user.save();
 
+    if (mailer.isConfigured()) {
+      const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+      try {
+        await mailer.sendResetEmail(email, resetUrl);
+      } catch (mailErr) {
+        // Email delivery failing shouldn't 500 the request — the token is
+        // already saved, so fall back to handing it back directly.
+        console.error('Reset email failed to send:', mailErr.message);
+        return res.json({
+          message: 'If an account exists for this email, a reset link has been generated.',
+          devResetToken: rawToken
+        });
+      }
+      return res.json({ message: 'If an account exists for this email, a reset link has been generated.' });
+    }
+
     res.json({
       message: 'If an account exists for this email, a reset link has been generated.',
-      devResetToken: rawToken // dev-only — see comment above
+      devResetToken: rawToken // no email configured — see comment above
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
