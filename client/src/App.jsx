@@ -36,6 +36,9 @@ let socket = null;
 
 function App() {
   const [user, setUser] = useState(null);              // null = not logged in
+  // True once the initial localStorage read (below) has run. Routing is
+  // gated on this — see the note above the early return further down.
+  const [authChecked, setAuthChecked] = useState(false);
   const [notifications, setNotifications] = useState([]); // list of notification objects
   const [unreadCount, setUnreadCount] = useState(0);   // badge count for the bell icon
   const [activity, setActivity] = useState([]);         // recent likes/comments on the user's posts
@@ -56,6 +59,11 @@ function App() {
   }, []); // empty deps: runs once on mount
   // When the page loads, check if the user was previously logged in.
   // The user object is saved to localStorage by the login() function below.
+  //
+  // setAuthChecked(true) runs synchronously in the same effect as the read —
+  // not after the /users/me network call — so it flips the instant we know
+  // whether a session exists, before anything downstream (Protected routes)
+  // gets a chance to render based on the still-default user=null.
   useEffect(() => {
     const saved = localStorage.getItem('user');
     const token = localStorage.getItem('token');
@@ -71,6 +79,7 @@ function App() {
         });
       }).catch(() => {});
     }
+    setAuthChecked(true);
   }, []);
   // Create a socket connection when the user logs in, disconnect when they log out.
   // The JWT is sent in the handshake auth so the server can verify who's connecting.
@@ -153,6 +162,18 @@ function App() {
     if (!user) return <Navigate to="/login" />;
     return children;
   };
+
+  // Don't render any routes until the localStorage check above has actually
+  // run. Without this, a hard page load / refresh on a protected URL (e.g.
+  // /groups/:id) renders once with the default user=null *before* the effect
+  // reads localStorage — Protected sees no user and redirects to /login.
+  // Then, one tick later, the effect finishes and user becomes truthy, so
+  // the /login route's own "already logged in" redirect immediately bounces
+  // to /, discarding the page the user actually asked for. Skipping the
+  // route tree entirely for this one-tick window avoids that whole chain —
+  // it's over before the browser paints anything, so there's no visible flash.
+  if (!authChecked) return null;
+
   return (
     <QueryClientProvider client={queryClient}>
     <BrowserRouter>
