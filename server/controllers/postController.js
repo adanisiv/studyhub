@@ -181,6 +181,16 @@ exports.getById = async (req, res) => {
       .populate('group', 'name')
       .populate('comments.author', 'name avatar');
     if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // Same privacy boundary as byGroup: a post in a private group is only
+    // visible to its members, even when fetched directly by post ID.
+    if (post.group) {
+      const group = await Group.findById(post.group._id);
+      if (group && group.isPrivate && !group.members.some(m => m.toString() === req.userId)) {
+        return res.status(403).json({ error: 'You are not a member of this private group' });
+      }
+    }
+
     res.json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
