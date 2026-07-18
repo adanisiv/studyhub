@@ -28,30 +28,39 @@ const io = new Server(server, {
 //   Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, etc.
 // crossOriginResourcePolicy: 'cross-origin' allows uploaded images/files to be
 // served to the React app on a different port without CORP blocking.
+// CORS must run BEFORE the rate limiters. If a limiter short-circuits with a
+// 429, that response would otherwise skip cors() and arrive with no
+// Access-Control-Allow-Origin header — the browser then reports it as a CORS
+// failure rather than "too many requests", which is what made the feed and
+// stats blank out during heavy use.
+app.use(cors());                                    // Allow all cross-origin requests
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-// Rate limiting — prevents abuse and brute-force attacks.
-// General API: 200 requests per 15 minutes per IP
+// Rate limiting — abuse / brute-force protection.
+// The general limit is deliberately high: a React client fires many background
+// requests per screen (feed pagination, stats, notifications), so a low cap
+// would lock out a legitimate user in the middle of a normal session.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15-minute window
-  max: 200,
+  max: 2000,
   standardHeaders: true,     // Return rate limit info in RateLimit-* headers
   legacyHeaders: false,      // Disable the old X-RateLimit-* headers
   message: { error: 'Too many requests, please try again later' }
 });
 
-// Auth endpoints get a stricter limit: 20 requests per 15 minutes
-// This specifically prevents password brute-forcing on login/register
+// Auth endpoints stay much stricter — this is the real brute-force guard on
+// login/register. Still generous enough for normal login and reset flows.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' }
 });
 
 app.use('/api/', apiLimiter);        // Apply general limit to ALL /api/* routes
 app.use('/api/auth', authLimiter);   // Apply stricter limit on top for auth routes
-
-app.use(cors());                                    // Allow all cross-origin requests
 app.use(express.json({ limit: '1mb' }));           // Parse JSON request bodies (max 1MB)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve uploaded files
 
