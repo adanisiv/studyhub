@@ -55,8 +55,7 @@
 </head>
 <body>
   <div id="root"></div>
-  <!-- Service worker (de)registration lives in src/index.js instead of here —
-       it needs process.env.NODE_ENV, which only exists inside the bundled JS,
-       to register in production but actively unregister in development. -->
+  <!-- Service worker registration lives in src/index.js — it needs
+       process.env.NODE_ENV, which only exists inside the bundled JS. -->
 </body>
 </html>

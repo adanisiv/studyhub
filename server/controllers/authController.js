@@ -76,18 +76,13 @@ exports.login = async (req, res) => {
   }
 };
 
-// Step 1 of the forgot-password flow: given an email, generate a one-time
-// reset token and store only its SHA-256 hash (mirrors why we bcrypt the
-// password itself — a leaked database shouldn't hand out usable tokens).
+// Forgot-password, step 1: generate a one-time reset token and store only its
+// SHA-256 hash — a leaked database must not contain usable tokens, the same
+// reason the password itself is bcrypt-hashed.
 //
-// This project has no email service wired up. In production, `rawToken`
-// would be emailed as a reset link and would never appear in the API
-// response at all — returning it here is a local-demo-only shortcut, and
-// it does mean this endpoint reveals whether an email is registered
-// (the response includes devResetToken only when an account was found).
-// That's an acceptable trade-off for a course project with no real users;
-// a production version would queue the email and always return the same
-// generic response regardless of whether the account exists.
+// No email service is configured in this project, so the raw token is returned
+// in the response (devResetToken) for the client to present as a link. In
+// production it would be emailed instead and never included in the response.
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -114,11 +109,9 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// Step 2 of the forgot-password flow: exchange a valid, unexpired token for
-// a new password. Hashes the incoming token the same way it was hashed at
-// generation time, then looks for a user whose stored hash matches AND
-// whose expiry hasn't passed — MongoDB's $gt comparison does the "is this
-// still valid" check in the same query as the lookup.
+// Forgot-password, step 2: exchange a valid, unexpired token for a new
+// password. The lookup matches the token's hash AND an unexpired timestamp
+// in one query ($gt on resetPasswordExpires).
 exports.resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;

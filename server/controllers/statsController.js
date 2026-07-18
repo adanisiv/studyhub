@@ -137,12 +137,9 @@ exports.postTypes = async (req, res) => {
   }
 };
 
-// Returns a flat stream of engagement THIS user gave to OTHER people's posts —
-// posts they liked and comments they wrote. This is deliberately the mirror
-// image of the Notifications bell (which shows what others did to YOUR posts):
-// Activity = "what you've been doing", Notifications = "what happened to you".
-// Keeping these two sources distinct is what makes the tabs worth having —
-// they used to both surface the same like/comment events and looked identical.
+// Returns the engagement THIS user gave to OTHER people's posts — likes and
+// comments they wrote. Deliberately the mirror image of the Notifications
+// bell: Activity = "what you did", Notifications = "what happened to you".
 exports.userActivity = async (req, res) => {
   try {
     const userId = req.params.userId;

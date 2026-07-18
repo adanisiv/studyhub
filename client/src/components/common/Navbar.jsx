@@ -37,13 +37,9 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
       toast(t('friendRequestAcceptedToast'), 'success');
       onDeleteNotification(notifId);
     } catch (err) {
-      // A friend_request notification can outlive the request it refers to —
-      // e.g. it was already accepted/declined elsewhere, or (for older seeded
-      // data) it predates the request-based friend system entirely and never
-      // had a real pending request behind it. The server correctly rejects
-      // accepting/declining something that isn't pending; the fix here is to
-      // clear the now-meaningless notification instead of leaving a
-      // permanently broken Accept button in the bell.
+      // A friend_request notification can outlive the request itself (e.g. it
+      // was already resolved elsewhere). On the server's 400, clear the stale
+      // notification instead of leaving a dead Accept button in the bell.
       if (err.response?.status === 400) {
         toast(t('requestNoLongerAvailable'), 'info');
         onDeleteNotification(notifId);

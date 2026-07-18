@@ -20,10 +20,9 @@ const userSchema = new mongoose.Schema({
   friendRequestsReceived: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   role:       { type: String, enum: ['student', 'admin'], default: 'student' },
 
-  // Forgot-password flow. We never store the raw reset token (same principle
-  // as the password itself) — only a SHA-256 hash of it, so a database leak
-  // doesn't hand out usable reset links. resetPasswordExpires makes the token
-  // single-use in time; it's cleared the moment the password is actually reset.
+  // Forgot-password flow: only a SHA-256 hash of the reset token is stored
+  // (same principle as the password — a DB leak must not yield usable links).
+  // Both fields are cleared on successful reset, making tokens single-use.
   resetPasswordTokenHash: { type: String, default: null },
   resetPasswordExpires:   { type: Date, default: null }
 }, { timestamps: true }); // adds createdAt + updatedAt

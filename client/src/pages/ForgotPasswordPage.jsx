@@ -8,9 +8,8 @@ function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // devResetToken is only present because this project has no email server —
-  // see the comment on authController.forgotPassword for why that's a
-  // demo-only shortcut and not something a production app would do.
+  // Present only because no email service is configured — the server returns
+  // the reset token directly instead of emailing it (see authController).
   const [devResetToken, setDevResetToken] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const { t } = useLanguage();
