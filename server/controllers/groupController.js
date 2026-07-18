@@ -26,16 +26,16 @@ exports.create = async (req, res) => {
   }
 };
 
-// Returns public groups + any private groups the user is already a member of.
-// Private groups the user has NOT joined are hidden from this listing.
+// Returns every group, public and private alike. Private groups are still
+// discoverable — the "Private" badge and lock icon on the client tell the
+// user it needs admin approval to join — otherwise there would be no way to
+// ever find a private group to request joining unless someone already had
+// a direct link. The actual privacy boundary (posts hidden from non-members)
+// is enforced separately in postController.byGroup, not by hiding the group
+// itself from lists and search.
 exports.list = async (req, res) => {
   try {
-    const groups = await Group.find({
-      $or: [
-        { isPrivate: false },      // public groups: visible to everyone
-        { members: req.userId }    // private groups: only visible to members
-      ]
-    }).populate('admin', 'name email'); // populate admin info for display
+    const groups = await Group.find({}).populate('admin', 'name email');
     res.json(groups);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -69,8 +69,8 @@ exports.search = async (req, res) => {
       filter.tags = { $in: [req.query.tag.toLowerCase().trim()] };
     }
 
-    // Even in search results, only show groups the user is allowed to see
-    filter.$or = [{ isPrivate: false }, { members: req.userId }];
+    // Private groups ARE included in search results, same reasoning as
+    // list() above — discoverability is not the privacy boundary, posts are.
 
     const groups = await Group.find(filter).populate('admin', 'name');
     res.json(groups);
@@ -80,7 +80,14 @@ exports.search = async (req, res) => {
 };
 
 // Populates admin, members, and pendingRequests so the detail page can render
-// the full member list and pending join requests (if the viewer is the admin).
+// the full member list and pending join requests.
+//
+// Anyone can view a group's basic info and member list, private or not —
+// that's what lets a non-member decide whether to request joining in the
+// first place. pendingRequests (who's currently waiting for approval) is the
+// one field trimmed for non-admins, since that's more sensitive than "who's
+// already a member." The actual content boundary (posts) is enforced
+// separately in postController.byGroup.
 exports.getById = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id)
@@ -90,13 +97,17 @@ exports.getById = async (req, res) => {
 
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    // Block non-members from viewing private group details
-    // .some() checks if the logged-in user's ID appears in the members array
-    if (group.isPrivate && !group.members.some(m => m._id.toString() === req.userId)) {
-      return res.status(403).json({ error: 'This group is private' });
+    const isAdmin = group.admin._id.toString() === req.userId;
+    const result = group.toObject();
+    if (!isAdmin) {
+      // Non-admins get a yes/no "do I personally have a request pending" flag
+      // instead of the full list — enough for the UI to show "Request Sent"
+      // without revealing who ELSE has asked to join.
+      result.myRequestPending = group.pendingRequests.some(r => String(r._id) === req.userId);
+      delete result.pendingRequests;
     }
 
-    res.json(group);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

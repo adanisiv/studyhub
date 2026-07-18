@@ -21,6 +21,7 @@ function GroupDetailPage({ user }) {
   const [editForm, setEditForm] = useState({});
   const [approveLoading, setApproveLoading] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
 
   const { data: group, isLoading: groupLoading, error: groupError } = useGroup(id);
   const { data: posts = [] } = useGroupPosts(id);
@@ -49,6 +50,20 @@ function GroupDetailPage({ user }) {
       toast(err.response?.data?.error || 'Failed', 'error');
     }
     setApproveLoading(null);
+  };
+  // Calls POST /api/groups/:id/join — server decides public (instant) vs.
+  // private (queued) based on group.isPrivate; the message it returns tells
+  // us which one happened, so the UI doesn't need to guess.
+  const handleJoin = async () => {
+    setJoinLoading(true);
+    try {
+      const res = await API.post(`/groups/${id}/join`);
+      toast(res.data.message, 'success');
+      invalidate(id);
+    } catch (err) {
+      toast(err.response?.data?.error || 'Failed', 'error');
+    }
+    setJoinLoading(false);
   };
   // Uses the ConfirmDialog to ask for confirmation before the irreversible action.
   // await confirm(...) returns true if the user clicked Confirm, false if cancelled.
@@ -158,6 +173,24 @@ function GroupDetailPage({ user }) {
                 {isMember && !isAdmin && (
                   <button className="btn btn-small btn-outline" onClick={handleLeave} disabled={actionLoading}>
                     {actionLoading ? <><span className="btn-spinner" /> {t('leaving')}</> : t('leave')}
+                  </button>
+                )}
+                {/* Not a member yet: offer to join. Disabled + relabeled once a
+                    private-group request is already pending, so the button
+                    can't be clicked twice. */}
+                {!isMember && (
+                  <button
+                    className="btn btn-small btn-primary"
+                    onClick={handleJoin}
+                    disabled={joinLoading || group.myRequestPending}
+                  >
+                    {joinLoading ? (
+                      <><span className="btn-spinner" /> {t('joining')}</>
+                    ) : group.myRequestPending ? (
+                      t('requestSent')
+                    ) : (
+                      t('joinGroup')
+                    )}
                   </button>
                 )}
               </div>
