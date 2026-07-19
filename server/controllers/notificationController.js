@@ -29,6 +29,26 @@ exports.unreadCount = async (req, res) => {
   }
 };
 
+// Marks a single notification as read — called when the user clicks it
+// (as opposed to markAllRead, which is the explicit "clear everything" button).
+exports.markRead = async (req, res) => {
+  try {
+    const notif = await Notification.findById(req.params.id);
+    if (!notif) return res.status(404).json({ error: 'Not found' });
+
+    // Same ownership check as remove() — only the recipient can mark their own read
+    if (notif.recipient.toString() !== req.userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    notif.read = true;
+    await notif.save();
+    res.json({ message: 'Notification marked as read' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Called when the user opens the notifications panel.
 // $set: { read: true } updates all matching documents in a single DB operation.
 exports.markAllRead = async (req, res) => {

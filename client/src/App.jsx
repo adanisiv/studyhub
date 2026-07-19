@@ -122,6 +122,20 @@ function App() {
     } catch (err) { console.error(err); }
   };
 
+  // Mark a single notification as read (called by Navbar when the user clicks it)
+  const handleMarkRead = async (id) => {
+    try {
+      await API.put(`/notifications/${id}/read`);
+      setNotifications(prev => {
+        const n = prev.find(x => x._id === id);
+        // Only decrement if it was actually unread — clicking an already-read
+        // notification again should be a harmless no-op, not double-decrement.
+        if (n && !n.read) setUnreadCount(c => Math.max(0, c - 1));
+        return prev.map(x => x._id === id ? { ...x, read: true } : x);
+      });
+    } catch (err) { console.error(err); }
+  };
+
   // Delete a single notification by ID
   const handleDeleteNotification = async (id) => {
     try {
@@ -199,6 +213,7 @@ function App() {
                   notifications={notifications}
                   unreadCount={unreadCount}
                   onMarkAllRead={handleMarkAllRead}
+                  onMarkRead={handleMarkRead}
                   onDeleteNotification={handleDeleteNotification}
                   activity={activity}
                 />

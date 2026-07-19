@@ -10,6 +10,7 @@ router.param('id', validateObjectId);
 router.get('/',         auth, ctrl.list);         // GET    /api/notifications        — list recent (30)
 router.get('/unread',   auth, ctrl.unreadCount);  // GET    /api/notifications/unread — badge count
 router.put('/read-all', auth, ctrl.markAllRead);  // PUT    /api/notifications/read-all — mark all read
+router.put('/:id/read', auth, ctrl.markRead);     // PUT    /api/notifications/:id/read — mark one read
 router.delete('/:id',   auth, ctrl.remove);       // DELETE /api/notifications/:id   — delete one
 
 module.exports = router;

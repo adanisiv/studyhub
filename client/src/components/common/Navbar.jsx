@@ -13,7 +13,7 @@ const TYPE_ICON = {
   group_approved: '✅',
 };
 
-function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onDeleteNotification, activity }) {
+function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onMarkRead, onDeleteNotification, activity }) {
   const toast = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,7 +67,11 @@ function Navbar({ user, onLogout, notifications, unreadCount, onMarkAllRead, onD
   //   like/comment  → the post (its group feed, or the main feed) with ?post= for scroll+highlight
   //   friend events → the sender's profile
   //   group events  → the group page
+  // It also marks the notification read, regardless of whether it had a
+  // navigable target — otherwise it stays in the unread count forever.
   const handleNotifClick = (n) => {
+    if (!n.read) onMarkRead(n._id);
+
     let target = null;
     if (n.post) {
       const postId = n.post._id || n.post;
