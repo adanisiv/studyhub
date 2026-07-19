@@ -13,9 +13,9 @@ function SearchPage({ user }) {
   const urlTag = urlParams.get('tag') || '';
   const initialTab = ['groups', 'posts', 'users'].includes(urlTab) ? urlTab : 'groups';
 
-  // useState: which tab is active ('groups' | 'posts' | 'users')
+  // useState — which tab is active ('groups' | 'posts' | 'users')
   const [tab, setTab] = useState(initialTab);
-  // useState: the values typed into the group search filters
+  // useState — the values typed into the group search filters
   // Four optional filter fields — only non-empty ones are sent as query params
   const [groupFilters, setGroupFilters] = useState({ name: '', year: '', semester: '', department: '' });
   const [groupResults, setGroupResults] = useState([]); // useState — the groups returned by the last search
@@ -36,15 +36,14 @@ function SearchPage({ user }) {
       console.error(err);
     }
   };
-  // useState: the values typed into the post search filters. Five optional filter
+  // useState — the values typed into the post search filters. Five optional filter
   // fields for post search. Pre-fill 'tag' from URL.
   const [postFilters, setPostFilters] = useState({ keyword: '', type: '', dateFrom: '', dateTo: '', tag: urlTag });
   const [postResults, setPostResults] = useState([]); // useState — the posts returned by the last search
   const [postSearched, setPostSearched] = useState(false); // useState — has the user searched yet?
 
-  // useEffect: runs once on mount (empty deps). Auto-runs the post search when
-  // the URL has a tag param (e.g. clicked a hashtag elsewhere in the app).
-  // Auto-run the post search when the URL has a tag param (clicked hashtag flow).
+  // useEffect — runs once on mount (empty deps). Auto-runs the post search when
+  // the URL has a tag param (e.g. a hashtag clicked elsewhere in the app).
   // Intentionally fires only on mount — query params don't change without remounting.
   useEffect(() => {
     if (urlTag && initialTab === 'posts') {
@@ -74,7 +73,7 @@ function SearchPage({ user }) {
   const jqueryInputRef = useRef(null);
   const jqueryResultsRef = useRef(null);
 
-  // useEffect: runs every time `tab` changes. Wires up all the jQuery event
+  // useEffect — runs every time `tab` changes. Wires up all the jQuery event
   // listeners (keyup search, click-to-navigate) on the Find People input.
   useEffect(() => {
     // jQuery is loaded globally in index.html as window.jQuery

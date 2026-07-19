@@ -120,7 +120,7 @@ function ProfilePage({ currentUser, onUserUpdate }) {
     }
   };
 
-  // useEffect: runs every time id changes (viewing a different profile). Loads
+  // useEffect — runs every time id changes (viewing a different profile). Loads
   // the profile, posts, groups, and stats for whichever user this page is for.
   useEffect(() => { loadProfile(); loadPosts(); loadGroups(); loadUserStats(); }, [id]);
 
@@ -140,9 +140,8 @@ function ProfilePage({ currentUser, onUserUpdate }) {
     setAvatarUploading(false);
   };
 
-  // useEffect: runs every time `profile` changes. Draws a gradient banner with
+  // useEffect — runs every time `profile` changes. Draws a gradient banner with
   // the user's name/initial using the HTML5 Canvas API.
-  // Draws a gradient banner with the user's name/initial using HTML5 Canvas API
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !profile) return;

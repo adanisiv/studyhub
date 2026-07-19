@@ -130,8 +130,7 @@ function ChatPage({ user }) {
   const [inChatQuery, setInChatQuery] = useState('');             // useState — the search text inside the chat
   const [inChatResults, setInChatResults] = useState([]);         // useState — the results of that in-chat search
   const [inChatSearching, setInChatSearching] = useState(false);  // useState — whether that search is still running
-  // mobileSidebar controls which panel is visible on small screens
-  const [mobileSidebar, setMobileSidebar] = useState(!friendId); // useState — which panel is visible on a small screen
+  const [mobileSidebar, setMobileSidebar] = useState(!friendId); // useState — which panel shows on a small screen
 
   // All of these are useRef: each one is stored in memory, but changing it does NOT re-render anything.
   const socketRef = useRef(null);          // useRef — holds the actual Socket.io connection
@@ -141,24 +140,23 @@ function ChatPage({ user }) {
   const prevRoomRef = useRef(null);       // useRef — remembers which room we were in before switching to this one
 
   // useRef — these two store the current roomId/friendId so the socket listeners
-  // (registered only once, below) always see the up-to-date value, without a stale closure.
-  // These refs store the current roomId and friendId so socket event handlers
-  // can access them without being stale closures. This avoids re-registering
-  // all socket listeners every time friendId changes.
+  // (registered only once, below) always see the up-to-date value, without a
+  // stale closure. This avoids re-registering all socket listeners every time
+  // friendId changes.
   const roomIdRef = useRef(null);
   const friendIdRef = useRef(null);
 
   // Compute the room ID from both user IDs (sorted so it's deterministic)
   const roomId = friendId ? makeRoomId(user._id, friendId) : null;
 
-  // useEffect x2: every time roomId/friendId changes, updates the matching ref.
-  // Keep the refs in sync whenever the derived values change
+  // useEffect x2 — keep the refs above in sync whenever roomId/friendId change.
   useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
   useEffect(() => { friendIdRef.current = friendId; }, [friendId]);
-  // useEffect: runs once only (empty deps) when the component loads. Opens the
-  // Socket.io connection and registers all the listeners (new message, who's online, etc.).
-  // We intentionally set up the socket ONCE and use refs inside event handlers
-  // so that we don't re-create the entire socket connection on every re-render.
+
+  // useEffect — runs once only (empty deps). Opens the Socket.io connection and
+  // registers all the listeners (new message, who's online, etc). We intentionally
+  // set this up ONCE and read the refs above inside the handlers, so we don't
+  // tear down and recreate the whole connection on every re-render.
   useEffect(() => {
     const token = localStorage.getItem('token');
     // Create a new socket connection with the JWT for server-side authentication
@@ -227,8 +225,9 @@ function ChatPage({ user }) {
       socket.disconnect();
     };
   }, []); // empty deps: socket is created once and stays alive for the component's lifetime
-  // useEffect: runs every time roomId or friendId changes, i.e. when switching to a different conversation.
-  // Every time the user navigates to a different conversation, we:
+
+  // useEffect — runs every time roomId or friendId changes, i.e. when switching
+  // to a different conversation. Every time that happens, we:
   //   1. Stop the typing indicator in the old room
   //   2. Clear the message list (new conversation starts fresh)
   //   3. Emit join_room so the server sends chat_history
@@ -251,14 +250,16 @@ function ChatPage({ user }) {
     // Focus the input so the user can type immediately
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [roomId, friendId]);
-  // useEffect: runs once only. Fetches the conversation list with all friends from the server.
-  // GET /api/messages/conversations returns all friends with lastMsg and unreadCount
+
+  // useEffect — runs once only. GET /api/messages/conversations returns all
+  // friends with their last message and unread count.
   useEffect(() => {
     API.get('/messages/conversations')
       .then(res => { setConversations(res.data); setConvsLoading(false); })
       .catch(() => setConvsLoading(false));
   }, []);
-  // useEffect: runs every time friendId changes. Fetches that friend's info from the server.
+
+  // useEffect — runs every time friendId changes. Fetches that friend's profile.
   useEffect(() => {
     if (!friendId) { setFriend(null); setFriendLoading(false); return; }
     setFriendLoading(true);
@@ -268,8 +269,9 @@ function ChatPage({ user }) {
       .finally(() => setFriendLoading(false));
     setMobileSidebar(false); // on mobile: switch from sidebar to chat panel
   }, [friendId]);
-  // useEffect: runs every time the messages array changes (a message was sent or received) — auto-scrolls to the bottom.
-  // Fires every time the messages array changes (new message sent or received)
+
+  // useEffect — runs every time the messages array changes (a message was sent
+  // or received). Auto-scrolls the chat down to the newest message.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -322,8 +324,8 @@ function ChatPage({ user }) {
     setInChatSearching(false);
   };
 
-  // useEffect: runs every time roomId changes — closes and resets the in-chat search panel when switching conversations.
-  // Close the search panel + reset state when the room changes
+  // useEffect — runs every time roomId changes. Closes and resets the in-chat
+  // search panel when switching conversations.
   useEffect(() => {
     setShowInChatSearch(false);
     setInChatQuery('');
