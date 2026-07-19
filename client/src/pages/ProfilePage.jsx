@@ -63,16 +63,17 @@ function ProfilePage({ currentUser, onUserUpdate }) {
   const confirm = useConfirm();
   const { t } = useLanguage();
 
-  const [profile, setProfile] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [userGroups, setUserGroups] = useState([]);
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({});
-  const [userStats, setUserStats] = useState(null);
+  // All of these are useState: each change re-renders the page.
+  const [profile, setProfile] = useState(null);       // useState — the user this profile belongs to
+  const [posts, setPosts] = useState([]);              // useState — the posts this user published
+  const [userGroups, setUserGroups] = useState([]);    // useState — the groups this user is a member of
+  const [editing, setEditing] = useState(false);       // useState — whether the edit form is currently open
+  const [editForm, setEditForm] = useState({});        // useState — the values in the edit form while typing
+  const [userStats, setUserStats] = useState(null);    // useState — the stats numbers (posts/likes/comments)
 
-  const canvasRef = useRef(null);
-  const avatarInputRef = useRef(null);
-  const [avatarUploading, setAvatarUploading] = useState(false);
+  const canvasRef = useRef(null);       // useRef — points to the canvas element that draws the banner
+  const avatarInputRef = useRef(null);  // useRef — points to the hidden file input, to open it via a button click
+  const [avatarUploading, setAvatarUploading] = useState(false); // useState — whether the profile photo is currently uploading
 
   const isOwnProfile = id === currentUser._id;
   // Server computes this relative to the logged-in viewer: 'none' | 'pending_sent' |
@@ -119,6 +120,8 @@ function ProfilePage({ currentUser, onUserUpdate }) {
     }
   };
 
+  // useEffect: runs every time id changes (viewing a different profile). Loads
+  // the profile, posts, groups, and stats for whichever user this page is for.
   useEffect(() => { loadProfile(); loadPosts(); loadGroups(); loadUserStats(); }, [id]);
 
   const handleAvatarChange = async (e) => {
@@ -137,6 +140,8 @@ function ProfilePage({ currentUser, onUserUpdate }) {
     setAvatarUploading(false);
   };
 
+  // useEffect: runs every time `profile` changes. Draws a gradient banner with
+  // the user's name/initial using the HTML5 Canvas API.
   // Draws a gradient banner with the user's name/initial using HTML5 Canvas API
   useEffect(() => {
     const canvas = canvasRef.current;

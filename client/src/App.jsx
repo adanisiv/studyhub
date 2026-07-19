@@ -35,13 +35,20 @@ import API from './api/axios';
 let socket = null;
 
 function App() {
+  // useState: who's currently logged in. null = nobody. Any change here re-renders the screen.
   const [user, setUser] = useState(null);              // null = not logged in
+  // useState: whether the localStorage login check (below) has finished running.
   // True once the initial localStorage read (below) has run. Routing is
   // gated on this — see the note above the early return further down.
   const [authChecked, setAuthChecked] = useState(false);
+  // useState: the notification list (bell icon)
   const [notifications, setNotifications] = useState([]); // list of notification objects
+  // useState: how many notifications are unread — the number on the badge
   const [unreadCount, setUnreadCount] = useState(0);   // badge count for the bell icon
+  // useState: recent activity on your posts (likes/comments)
   const [activity, setActivity] = useState([]);         // recent likes/comments on the user's posts
+  // useEffect: runs once when the page loads. Checks the browser language and
+  // sets the text direction (right-to-left for Hebrew).
   // Detects the browser language and sets the HTML dir attribute for RTL languages.
   // This makes Hebrew, Arabic, etc. render correctly right-to-left.
   useEffect(() => {
@@ -57,6 +64,8 @@ function App() {
       console.error('RTL detection error:', e);
     }
   }, []); // empty deps: runs once on mount
+  // useEffect: runs once when the page loads. Checks if a previous login was
+  // saved in localStorage and updates `user` accordingly.
   // When the page loads, check if the user was previously logged in.
   // The user object is saved to localStorage by the login() function below.
   //
@@ -81,6 +90,9 @@ function App() {
     }
     setAuthChecked(true);
   }, []);
+  // useEffect: runs every time `user` changes (that's what [user] at the end means).
+  // When someone logs in — opens a Socket.io connection. When they log out — the
+  // cleanup function below closes it.
   // Create a socket connection when the user logs in, disconnect when they log out.
   // The JWT is sent in the handshake auth so the server can verify who's connecting.
   useEffect(() => {
@@ -98,6 +110,8 @@ function App() {
     // (logout) or the app unmounts. Guarded in case the socket is already gone.
     return () => { if (socket) { socket.disconnect(); socket = null; } };
   }, [user]); // re-run when user changes (login/logout)
+  // useEffect: also runs every time `user` changes. Fetches old notifications +
+  // unread count + recent activity from the server.
   // Fetches existing notifications + unread count + activity stream when the user logs in.
   // Real-time notifications (above) only deliver NEW ones while online.
   useEffect(() => {

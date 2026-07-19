@@ -115,28 +115,33 @@ function ChatPage({ user }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const dateLabels = { today: t('today'), yesterday: t('yesterday') };
-  const [conversations, setConversations] = useState([]); // list of conversations with friends
-  const [convsLoading, setConvsLoading] = useState(true);
-  const [friend, setFriend] = useState(null);             // the currently selected friend's profile
-  const [friendLoading, setFriendLoading] = useState(false);
-  const [messages, setMessages] = useState([]);            // messages in the current room
-  const [text, setText] = useState('');                   // text input value
-  const [typing, setTyping] = useState(false);            // is the other person typing?
-  const [onlineUsers, setOnlineUsers] = useState(new Set()); // set of currently online user IDs
-  const [searchQuery, setSearchQuery] = useState('');     // conversation search filter
+  // All of these are useState: each one, when it changes, re-renders the relevant part of the screen.
+  const [conversations, setConversations] = useState([]); // useState — the conversation list
+  const [convsLoading, setConvsLoading] = useState(true); // useState — whether the conversation list is still loading
+  const [friend, setFriend] = useState(null);             // useState — the friend for the currently open chat
+  const [friendLoading, setFriendLoading] = useState(false); // useState — whether that friend's info is still loading
+  const [messages, setMessages] = useState([]);            // useState — the messages in the open chat
+  const [text, setText] = useState('');                   // useState — what's currently typed in the input box
+  const [typing, setTyping] = useState(false);            // useState — whether the other person is typing right now
+  const [onlineUsers, setOnlineUsers] = useState(new Set()); // useState — which friends are online right now
+  const [searchQuery, setSearchQuery] = useState('');     // useState — the search text for the conversation list
   // In-conversation search panel state
-  const [showInChatSearch, setShowInChatSearch] = useState(false);
-  const [inChatQuery, setInChatQuery] = useState('');
-  const [inChatResults, setInChatResults] = useState([]);
-  const [inChatSearching, setInChatSearching] = useState(false);
+  const [showInChatSearch, setShowInChatSearch] = useState(false); // useState — whether the in-chat search panel is open
+  const [inChatQuery, setInChatQuery] = useState('');             // useState — the search text inside the chat
+  const [inChatResults, setInChatResults] = useState([]);         // useState — the results of that in-chat search
+  const [inChatSearching, setInChatSearching] = useState(false);  // useState — whether that search is still running
   // mobileSidebar controls which panel is visible on small screens
-  const [mobileSidebar, setMobileSidebar] = useState(!friendId);
-  const socketRef = useRef(null);          // Socket.io instance
-  const typingTimeoutRef = useRef(null);  // Timer to stop typing indicator after 1.5s pause
-  const messagesEndRef = useRef(null);    // Bottom of message list (used for auto-scroll)
-  const inputRef = useRef(null);          // Message input textarea (for auto-focus)
-  const prevRoomRef = useRef(null);       // The room we were in before navigating
+  const [mobileSidebar, setMobileSidebar] = useState(!friendId); // useState — which panel is visible on a small screen
 
+  // All of these are useRef: each one is stored in memory, but changing it does NOT re-render anything.
+  const socketRef = useRef(null);          // useRef — holds the actual Socket.io connection
+  const typingTimeoutRef = useRef(null);  // useRef — the timer ID that stops the typing indicator after 1.5s
+  const messagesEndRef = useRef(null);    // useRef — points to the element at the bottom of the list, for auto-scroll
+  const inputRef = useRef(null);          // useRef — points to the message input box, to auto-focus it
+  const prevRoomRef = useRef(null);       // useRef — remembers which room we were in before switching to this one
+
+  // useRef — these two store the current roomId/friendId so the socket listeners
+  // (registered only once, below) always see the up-to-date value, without a stale closure.
   // These refs store the current roomId and friendId so socket event handlers
   // can access them without being stale closures. This avoids re-registering
   // all socket listeners every time friendId changes.
@@ -146,9 +151,12 @@ function ChatPage({ user }) {
   // Compute the room ID from both user IDs (sorted so it's deterministic)
   const roomId = friendId ? makeRoomId(user._id, friendId) : null;
 
+  // useEffect x2: every time roomId/friendId changes, updates the matching ref.
   // Keep the refs in sync whenever the derived values change
   useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
   useEffect(() => { friendIdRef.current = friendId; }, [friendId]);
+  // useEffect: runs once only (empty deps) when the component loads. Opens the
+  // Socket.io connection and registers all the listeners (new message, who's online, etc.).
   // We intentionally set up the socket ONCE and use refs inside event handlers
   // so that we don't re-create the entire socket connection on every re-render.
   useEffect(() => {
@@ -219,6 +227,7 @@ function ChatPage({ user }) {
       socket.disconnect();
     };
   }, []); // empty deps: socket is created once and stays alive for the component's lifetime
+  // useEffect: runs every time roomId or friendId changes, i.e. when switching to a different conversation.
   // Every time the user navigates to a different conversation, we:
   //   1. Stop the typing indicator in the old room
   //   2. Clear the message list (new conversation starts fresh)
@@ -242,12 +251,14 @@ function ChatPage({ user }) {
     // Focus the input so the user can type immediately
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [roomId, friendId]);
+  // useEffect: runs once only. Fetches the conversation list with all friends from the server.
   // GET /api/messages/conversations returns all friends with lastMsg and unreadCount
   useEffect(() => {
     API.get('/messages/conversations')
       .then(res => { setConversations(res.data); setConvsLoading(false); })
       .catch(() => setConvsLoading(false));
   }, []);
+  // useEffect: runs every time friendId changes. Fetches that friend's info from the server.
   useEffect(() => {
     if (!friendId) { setFriend(null); setFriendLoading(false); return; }
     setFriendLoading(true);
@@ -257,6 +268,7 @@ function ChatPage({ user }) {
       .finally(() => setFriendLoading(false));
     setMobileSidebar(false); // on mobile: switch from sidebar to chat panel
   }, [friendId]);
+  // useEffect: runs every time the messages array changes (a message was sent or received) — auto-scrolls to the bottom.
   // Fires every time the messages array changes (new message sent or received)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -310,6 +322,7 @@ function ChatPage({ user }) {
     setInChatSearching(false);
   };
 
+  // useEffect: runs every time roomId changes — closes and resets the in-chat search panel when switching conversations.
   // Close the search panel + reset state when the room changes
   useEffect(() => {
     setShowInChatSearch(false);
